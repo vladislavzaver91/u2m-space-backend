@@ -89,44 +89,44 @@ passport.use(
 )
 
 // Apple Strategy
-passport.use(
-	new AppleStrategy(
-		{
-			clientID: process.env.APPLE_CLIENT_ID,
-			teamID: process.env.APPLE_TEAM_ID,
-			keyID: process.env.APPLE_KEY_ID,
-			privateKey: process.env.APPLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-			callbackURL: `${process.env.CALLBACK_URL}/api/auth/callback/apple`,
-			scope: ['name', 'email'],
-		},
-		async (accessToken, refreshToken, profile, done) => {
-			try {
-				let user = await prisma.user.findUnique({
-					where: { email: profile.email },
-				})
+// passport.use(
+// 	new AppleStrategy(
+// 		{
+// 			clientID: process.env.APPLE_CLIENT_ID,
+// 			teamID: process.env.APPLE_TEAM_ID,
+// 			keyID: process.env.APPLE_KEY_ID,
+// 			privateKey: process.env.APPLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+// 			callbackURL: `${process.env.CALLBACK_URL}/api/auth/callback/apple`,
+// 			scope: ['name', 'email'],
+// 		},
+// 		async (accessToken, refreshToken, profile, done) => {
+// 			try {
+// 				let user = await prisma.user.findUnique({
+// 					where: { email: profile.email },
+// 				})
 
-				if (!user) {
-					user = await prisma.user.create({
-						data: {
-							id: profile.id,
-							email: profile.email,
-							name: profile.name
-								? `${profile.name.firstName || ''} ${
-										profile.name.lastName || ''
-								  }`.trim()
-								: '',
-							provider: 'apple',
-						},
-					})
-				}
-				console.log('Apple user:', user)
-				done(null, user)
-			} catch (error) {
-				console.error('Apple auth error:', error)
-				done(error, null)
-			}
-		}
-	)
-)
+// 				if (!user) {
+// 					user = await prisma.user.create({
+// 						data: {
+// 							id: profile.id,
+// 							email: profile.email,
+// 							name: profile.name
+// 								? `${profile.name.firstName || ''} ${
+// 										profile.name.lastName || ''
+// 								  }`.trim()
+// 								: '',
+// 							provider: 'apple',
+// 						},
+// 					})
+// 				}
+// 				console.log('Apple user:', user)
+// 				done(null, user)
+// 			} catch (error) {
+// 				console.error('Apple auth error:', error)
+// 				done(error, null)
+// 			}
+// 		}
+// 	)
+// ) после добавления ключей, можно раскомментировать
 
 module.exports = passport
