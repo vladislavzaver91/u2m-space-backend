@@ -6,23 +6,9 @@ const { authRouter } = require('./routes')
 
 const app = express()
 
-const allowedOrigins = [
-	process.env.FRONTEND_URL,
-	'https://u2m-space-frontend-gf1tarlz4-vladislavzaver91s-projects.vercel.app',
-	'http://localhost:3001',
-]
-
 app.use(
 	cors({
-		origin: (origin, callback) => {
-			// Разрешить запросы без origin (например, от серверных приложений)
-			if (!origin) return callback(null, true)
-			if (allowedOrigins.includes(origin)) {
-				callback(null, true)
-			} else {
-				callback(new Error('Not allowed by CORS'))
-			}
-		},
+		origin: [process.env.FRONTEND_URL, 'http://localhost:3001'],
 		credentials: true,
 		methods: ['GET', 'POST', 'OPTIONS'],
 		allowedHeaders: ['Content-Type', 'Authorization'],
