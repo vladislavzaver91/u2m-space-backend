@@ -2,7 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const session = require('express-session')
 const passport = require('./services/authService')
-const { authRouter } = require('./routes')
+const { authRouter, classifiedsRouter } = require('./routes')
 
 const app = express()
 
@@ -21,5 +21,6 @@ app.use(passport.session())
 
 // Routes
 app.use('/', authRouter)
+app.use('/', classifiedsRouter)
 
 module.exports = app

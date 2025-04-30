@@ -1,0 +1,482 @@
+[
+	{
+		"title": "Vintage Wooden Chair",
+		"description": "A beautifully crafted vintage wooden chair, perfect for adding a rustic touch to your home.",
+		"price": 89.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Chair1-1",
+			"https://via.placeholder.com/300x200?text=Chair1-2",
+			"https://via.placeholder.com/300x200?text=Chair1-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Smart LED TV 55\"",
+		"description": "55-inch 4K Smart LED TV with built-in streaming apps and voice control.",
+		"price": 499.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=TV2-1",
+			"https://via.placeholder.com/300x200?text=TV2-2",
+			"https://via.placeholder.com/300x200?text=TV2-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Mountain Bike",
+		"description": "High-performance mountain bike with 21 speeds and durable frame.",
+		"price": 299.5,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Bike3-1",
+			"https://via.placeholder.com/300x200?text=Bike3-2",
+			"https://via.placeholder.com/300x200?text=Bike3-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Leather Sofa",
+		"description": "Luxurious leather sofa, comfortable and stylish for any living room.",
+		"price": 799.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Sofa4-1",
+			"https://via.placeholder.com/300x200?text=Sofa4-2",
+			"https://via.placeholder.com/300x200?text=Sofa4-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Wireless Headphones",
+		"description": "Noise-cancelling wireless headphones with 20-hour battery life.",
+		"price": 129.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Headphones5-1",
+			"https://via.placeholder.com/300x200?text=Headphones5-2",
+			"https://via.placeholder.com/300x200?text=Headphones5-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Gaming Laptop",
+		"description": "High-performance gaming laptop with RTX 3060 and 16GB RAM.",
+		"price": 1499.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Laptop6-1",
+			"https://via.placeholder.com/300x200?text=Laptop6-2",
+			"https://via.placeholder.com/300x200?text=Laptop6-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Coffee Table",
+		"description": "Modern glass coffee table with a sleek design.",
+		"price": 199.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Table7-1",
+			"https://via.placeholder.com/300x200?text=Table7-2",
+			"https://via.placeholder.com/300x200?text=Table7-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Electric Scooter",
+		"description": "Foldable electric scooter with a 25-mile range.",
+		"price": 349.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Scooter8-1",
+			"https://via.placeholder.com/300x200?text=Scooter8-2",
+			"https://via.placeholder.com/300x200?text=Scooter8-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Designer Sunglasses",
+		"description": "Stylish designer sunglasses with UV protection.",
+		"price": 89.5,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Sunglasses9-1",
+			"https://via.placeholder.com/300x200?text=Sunglasses9-2",
+			"https://via.placeholder.com/300x200?text=Sunglasses9-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Acoustic Guitar",
+		"description": "High-quality acoustic guitar, perfect for beginners and pros.",
+		"price": 249.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Guitar10-1",
+			"https://via.placeholder.com/300x200?text=Guitar10-2",
+			"https://via.placeholder.com/300x200?text=Guitar10-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Portable Projector",
+		"description": "Compact projector for home entertainment and presentations.",
+		"price": 199.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Projector11-1",
+			"https://via.placeholder.com/300x200?text=Projector11-2",
+			"https://via.placeholder.com/300x200?text=Projector11-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Kitchen Mixer",
+		"description": "Professional kitchen mixer with multiple attachments.",
+		"price": 299.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Mixer12-1",
+			"https://via.placeholder.com/300x200?text=Mixer12-2",
+			"https://via.placeholder.com/300x200?text=Mixer12-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Smart Thermostat",
+		"description": "Energy-saving smart thermostat with Wi-Fi connectivity.",
+		"price": 129.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Thermostat13-1",
+			"https://via.placeholder.com/300x200?text=Thermostat13-2",
+			"https://via.placeholder.com/300x200?text=Thermostat13-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Camping Tent",
+		"description": "Spacious 4-person camping tent, waterproof and durable.",
+		"price": 149.5,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Tent14-1",
+			"https://via.placeholder.com/300x200?text=Tent14-2",
+			"https://via.placeholder.com/300x200?text=Tent14-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Fitness Tracker",
+		"description": "Advanced fitness tracker with heart rate monitoring.",
+		"price": 79.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Tracker15-1",
+			"https://via.placeholder.com/300x200?text=Tracker15-2",
+			"https://via.placeholder.com/300x200?text=Tracker15-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Dining Table Set",
+		"description": "Elegant dining table set with 6 chairs.",
+		"price": 599.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=TableSet16-1",
+			"https://via.placeholder.com/300x200?text=TableSet16-2",
+			"https://via.placeholder.com/300x200?text=TableSet16-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Bluetooth Speaker",
+		"description": "Portable Bluetooth speaker with excellent sound quality.",
+		"price": 59.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Speaker17-1",
+			"https://via.placeholder.com/300x200?text=Speaker17-2",
+			"https://via.placeholder.com/300x200?text=Speaker17-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Office Chair",
+		"description": "Ergonomic office chair with adjustable height.",
+		"price": 129.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Chair18-1",
+			"https://via.placeholder.com/300x200?text=Chair18-2",
+			"https://via.placeholder.com/300x200?text=Chair18-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Smart Watch",
+		"description": "Feature-rich smart watch with fitness tracking and notifications.",
+		"price": 199.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Watch19-1",
+			"https://via.placeholder.com/300x200?text=Watch19-2",
+			"https://via.placeholder.com/300x200?text=Watch19-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Backpack",
+		"description": "Durable backpack with multiple compartments, ideal for travel.",
+		"price": 69.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Backpack20-1",
+			"https://via.placeholder.com/300x200?text=Backpack20-2",
+			"https://via.placeholder.com/300x200?text=Backpack20-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Bookshelf",
+		"description": "Sturdy wooden bookshelf with 5 shelves.",
+		"price": 249.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Bookshelf21-1",
+			"https://via.placeholder.com/300x200?text=Bookshelf21-2",
+			"https://via.placeholder.com/300x200?text=Bookshelf21-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Air Purifier",
+		"description": "HEPA air purifier for clean and fresh indoor air.",
+		"price": 149.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=AirPurifier22-1",
+			"https://via.placeholder.com/300x200?text=AirPurifier22-2",
+			"https://via.placeholder.com/300x200?text=AirPurifier22-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Electric Kettle",
+		"description": "Fast-boiling electric kettle with auto shut-off.",
+		"price": 39.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Kettle23-1",
+			"https://via.placeholder.com/300x200?text=Kettle23-2",
+			"https://via.placeholder.com/300x200?text=Kettle23-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Yoga Mat",
+		"description": "Non-slip yoga mat for comfortable workouts.",
+		"price": 29.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=YogaMat24-1",
+			"https://via.placeholder.com/300x200?text=YogaMat24-2",
+			"https://via.placeholder.com/300x200?text=YogaMat24-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Desk Lamp",
+		"description": "Adjustable LED desk lamp with touch control.",
+		"price": 49.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Lamp25-1",
+			"https://via.placeholder.com/300x200?text=Lamp25-2",
+			"https://via.placeholder.com/300x200?text=Lamp25-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Microwave Oven",
+		"description": "Compact microwave oven with multiple power settings.",
+		"price": 99.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Microwave26-1",
+			"https://via.placeholder.com/300x200?text=Microwave26-2",
+			"https://via.placeholder.com/300x200?text=Microwave26-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Wall Art",
+		"description": "Abstract canvas wall art for home decor.",
+		"price": 79.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=WallArt27-1",
+			"https://via.placeholder.com/300x200?text=WallArt27-2",
+			"https://via.placeholder.com/300x200?text=WallArt27-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Robot Vacuum",
+		"description": "Smart robot vacuum cleaner with app control.",
+		"price": 249.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Vacuum28-1",
+			"https://via.placeholder.com/300x200?text=Vacuum28-2",
+			"https://via.placeholder.com/300x200?text=Vacuum28-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Patio Furniture Set",
+		"description": "Outdoor patio furniture set with table and 4 chairs.",
+		"price": 499.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=PatioSet29-1",
+			"https://via.placeholder.com/300x200?text=PatioSet29-2",
+			"https://via.placeholder.com/300x200?text=PatioSet29-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Digital Camera",
+		"description": "Compact digital camera with 20MP sensor.",
+		"price": 299.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Camera30-1",
+			"https://via.placeholder.com/300x200?text=Camera30-2",
+			"https://via.placeholder.com/300x200?text=Camera30-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Barbecue Grill",
+		"description": "Portable barbecue grill for outdoor cooking.",
+		"price": 199.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Grill31-1",
+			"https://via.placeholder.com/300x200?text=Grill31-2",
+			"https://via.placeholder.com/300x200?text=Grill31-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Snowboard",
+		"description": "High-quality snowboard for all skill levels.",
+		"price": 349.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Snowboard32-1",
+			"https://via.placeholder.com/300x200?text=Snowboard32-2",
+			"https://via.placeholder.com/300x200?text=Snowboard32-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Espresso Machine",
+		"description": "Professional espresso machine for home use.",
+		"price": 399.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Espresso33-1",
+			"https://via.placeholder.com/300x200?text=Espresso33-2",
+			"https://via.placeholder.com/300x200?text=Espresso33-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Treadmill",
+		"description": "Foldable treadmill with digital display.",
+		"price": 599.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Treadmill34-1",
+			"https://via.placeholder.com/300x200?text=Treadmill34-2",
+			"https://via.placeholder.com/300x200?text=Treadmill34-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Ceiling Fan",
+		"description": "Modern ceiling fan with remote control.",
+		"price": 129.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Fan35-1",
+			"https://via.placeholder.com/300x200?text=Fan35-2",
+			"https://via.placeholder.com/300x200?text=Fan35-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Laptop Stand",
+		"description": "Adjustable laptop stand for ergonomic work setup.",
+		"price": 39.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Stand36-1",
+			"https://via.placeholder.com/300x200?text=Stand36-2",
+			"https://via.placeholder.com/300x200?text=Stand36-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Portable Air Conditioner",
+		"description": "Compact air conditioner for small spaces.",
+		"price": 349.0,
+		"images": [
+			"https://via.placeholder.com/300x200?text=AC37-1",
+			"https://via.placeholder.com/300x200?text=AC37-2",
+			"https://via.placeholder.com/300x200?text=AC37-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Dumbbell Set",
+		"description": "Adjustable dumbbell set for home workouts.",
+		"price": 199.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Dumbbell38-1",
+			"https://via.placeholder.com/300x200?text=Dumbbell38-2",
+			"https://via.placeholder.com/300x200?text=Dumbbell38-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Wall Clock",
+		"description": "Minimalist wall clock with silent mechanism.",
+		"price": 49.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Clock39-1",
+			"https://via.placeholder.com/300x200?text=Clock39-2",
+			"https://via.placeholder.com/300x200?text=Clock39-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	},
+	{
+		"title": "Skateboard",
+		"description": "Durable skateboard for tricks and cruising.",
+		"price": 79.99,
+		"images": [
+			"https://via.placeholder.com/300x200?text=Skateboard40-1",
+			"https://via.placeholder.com/300x200?text=Skateboard40-2",
+			"https://via.placeholder.com/300x200?text=Skateboard40-3"
+		],
+		"isActive": true,
+		"userId": "replace_with_user_id"
+	}
+]
