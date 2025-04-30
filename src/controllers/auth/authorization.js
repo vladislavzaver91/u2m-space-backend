@@ -9,14 +9,14 @@ exports.googleAuth = passport.authenticate('google', {
 
 exports.googleCallback = passport.authenticate('google', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
-	successRedirect: '/api/auth/success',
+	successRedirect: `${process.env.FRONTEND_URL}/api/auth/success`,
 })
 
 exports.facebookAuth = passport.authenticate('facebook', { scope: ['email'] })
 
 exports.facebookCallback = passport.authenticate('facebook', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
-	successRedirect: '/api/auth/success',
+	successRedirect: `${process.env.FRONTEND_URL}/api/auth/success`,
 })
 
 exports.authSuccess = async (req, res) => {
