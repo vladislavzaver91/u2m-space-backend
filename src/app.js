@@ -6,14 +6,7 @@ const { authRouter } = require('./routes')
 
 const app = express()
 
-app.use(
-	cors({
-		origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-		credentials: true,
-		methods: ['GET', 'POST', 'OPTIONS'],
-		allowedHeaders: ['Content-Type', 'Authorization'],
-	})
-)
+app.use(cors())
 
 app.use(express.json())
 app.use(
