@@ -1,6 +1,7 @@
 const passport = require('passport')
 const GoogleStrategy = require('passport-google-oauth20').Strategy
 const FacebookStrategy = require('passport-facebook').Strategy
+const AppleStrategy = require('passport-apple').Strategy
 const prisma = require('../lib/prisma')
 
 passport.serializeUser((user, done) => {
@@ -81,6 +82,47 @@ passport.use(
 				done(null, user)
 			} catch (error) {
 				console.error('Facebook auth error:', error)
+				done(error, null)
+			}
+		}
+	)
+)
+
+// Apple Strategy
+passport.use(
+	new AppleStrategy(
+		{
+			clientID: process.env.APPLE_CLIENT_ID,
+			teamID: process.env.APPLE_TEAM_ID,
+			keyID: process.env.APPLE_KEY_ID,
+			privateKey: process.env.APPLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+			callbackURL: `${process.env.CALLBACK_URL}/api/auth/callback/apple`,
+			scope: ['name', 'email'],
+		},
+		async (accessToken, refreshToken, profile, done) => {
+			try {
+				let user = await prisma.user.findUnique({
+					where: { email: profile.email },
+				})
+
+				if (!user) {
+					user = await prisma.user.create({
+						data: {
+							id: profile.id,
+							email: profile.email,
+							name: profile.name
+								? `${profile.name.firstName || ''} ${
+										profile.name.lastName || ''
+								  }`.trim()
+								: '',
+							provider: 'apple',
+						},
+					})
+				}
+				console.log('Apple user:', user)
+				done(null, user)
+			} catch (error) {
+				console.error('Apple auth error:', error)
 				done(error, null)
 			}
 		}

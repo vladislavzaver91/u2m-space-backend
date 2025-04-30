@@ -12,6 +12,10 @@ router.get('/api/auth/callback/google', authController.googleCallback)
 router.get('/api/auth/facebook', authController.facebookAuth)
 router.get('/api/auth/callback/facebook', authController.facebookCallback)
 
+// Apple Auth Routes
+router.get('/api/auth/apple', authController.appleAuth)
+router.get('/api/auth/callback/apple', authController.appleCallback)
+
 // Success and Failure Routes
 router.get('/api/auth/success', authController.authSuccess)
 router.get('/api/auth/failure', authController.authFailure)

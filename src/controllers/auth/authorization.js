@@ -19,6 +19,15 @@ exports.facebookCallback = passport.authenticate('facebook', {
 	successRedirect: '/api/auth/success',
 })
 
+exports.appleAuth = passport.authenticate('apple', {
+	scope: ['name', 'email'],
+})
+
+exports.appleCallback = passport.authenticate('apple', {
+	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
+	successRedirect: '/api/auth/success',
+})
+
 exports.authSuccess = async (req, res) => {
 	if (!req.user) {
 		console.error('No user found in authSuccess')
