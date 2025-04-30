@@ -35,11 +35,6 @@ app.use(
 		secret: process.env.SESSION_SECRET || 'your-session-secret',
 		resave: false,
 		saveUninitialized: false,
-		cookie: {
-			secure: process.env.NODE_ENV === 'production', // HTTPS в продакшене
-			httpOnly: true,
-			sameSite: 'lax', // Для кросс-доменных запросов
-		},
 	})
 )
 app.use(passport.initialize())
