@@ -25,3 +25,12 @@ model RefreshToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model AuthState {
+  id           String   @id @default(uuid())
+  state        String   @unique
+  user         String
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+}

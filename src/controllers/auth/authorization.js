@@ -9,20 +9,20 @@ exports.googleAuth = passport.authenticate('google', {
 
 exports.googleCallback = passport.authenticate('google', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
-	successRedirect: `${process.env.FRONTEND_URL}/`,
+	successRedirect: '/api/auth/success',
 })
 
 exports.facebookAuth = passport.authenticate('facebook', { scope: ['email'] })
 
 exports.facebookCallback = passport.authenticate('facebook', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
-	successRedirect: `${process.env.FRONTEND_URL}/`,
+	successRedirect: '/api/auth/success',
 })
 
 exports.authSuccess = async (req, res) => {
 	if (!req.user) {
 		console.error('No user found in authSuccess')
-		return res.redirect(`${process.env.FRONTEND_URL}/login?error=No user found`)
+		return res.status(401).json({ error: 'No user found' })
 	}
 
 	try {
@@ -50,33 +50,25 @@ exports.authSuccess = async (req, res) => {
 			provider: req.user.provider,
 		}
 
-		// Устанавливаем HTTP-only cookie
-		res.cookie('accessToken', accessToken, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'strict',
-			maxAge: 60 * 60 * 1000, // 1 час
+		const state = crypto.randomBytes(16).toString('hex')
+		const stateExpires = new Date(Date.now() + 5 * 60 * 1000) // 5 мин
+
+		await prisma.authState.create({
+			data: {
+				state,
+				user: JSON.stringify(user),
+				accessToken,
+				refreshToken,
+				expiresAt: stateExpires,
+			},
 		})
 
-		res.cookie('refreshToken', refreshToken, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'strict',
-			maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
-		})
-
-		res.cookie('user', JSON.stringify(user), {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'strict',
-			maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
-		})
-
-		// Перенаправляем на фронтенд
-		return res.redirect(`${process.env.FRONTEND_URL}/`)
+		return res.redirect(
+			`${process.env.FRONTEND_URL}/selling-classifieds?state=${state}`
+		)
 	} catch (error) {
 		console.error('Error in authSuccess:', error)
-		return res.redirect(`${process.env.FRONTEND_URL}/login?error=Server error`)
+		return res.status(500).json({ error: 'Server error' })
 	}
 }
 
@@ -87,32 +79,32 @@ exports.authFailure = (req, res) => {
 	)
 }
 
-exports.getData = (req, res, next) => {
+exports.exchangeState = async (req, res) => {
+	const { state } = req.query
+
+	if (!state) {
+		return res.status(400).json({ error: 'State parameter is required' })
+	}
+
 	try {
-		const accessToken = req.cookies.accessToken
-		const refreshToken = req.cookies.refreshToken
-		const userRaw = req.cookies.user
+		const authState = await prisma.authState.findUnique({
+			where: { state },
+		})
 
-		if (!accessToken || !refreshToken || !userRaw) {
-			return res.status(401).json({ error: 'No authentication data found' })
+		if (!authState || authState.expiresAt < new Date()) {
+			return res.status(401).json({ error: 'Invalid or expired state' })
 		}
 
-		let user
-		try {
-			user = JSON.parse(userRaw)
-		} catch (error) {
-			console.error('Failed to parse user cookie:', error)
-			return res.status(400).json({ error: 'Invalid user data' })
-		}
+		const { user, accessToken, refreshToken } = authState
+		const userData = JSON.parse(user)
 
-		if (!user.id || !user.email || !user.provider) {
-			return res.status(400).json({ error: 'Incomplete user data' })
-		}
+		await prisma.authState.delete({
+			where: { state },
+		})
 
-		res.json({ user, accessToken, refreshToken })
-		next()
+		return res.json({ user: userData, accessToken, refreshToken })
 	} catch (error) {
-		console.error('Error in auth data route:', error)
+		console.error('Error in exchangeState:', error)
 		return res.status(500).json({ error: 'Server error' })
 	}
 }

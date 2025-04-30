@@ -1,7 +1,6 @@
 const express = require('express')
 const authController = require('../controllers/auth/authorization')
 const refreshController = require('../controllers/auth/refresh')
-const clearCookies = require('../middleware/clearCookies')
 
 const router = express.Router()
 
@@ -17,8 +16,8 @@ router.get('/api/auth/callback/facebook', authController.facebookCallback)
 router.get('/api/auth/success', authController.authSuccess)
 router.get('/api/auth/failure', authController.authFailure)
 
-// получения данных из cookie
-router.get('/api/auth/data', authController.getData, clearCookies)
+// Обмен state на данные
+router.get('/api/auth/exchange', authController.exchangeState)
 
 // Refresh Token Route
 router.post('/api/auth/refresh', refreshController.refreshToken)
