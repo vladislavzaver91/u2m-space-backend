@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken')
 const prisma = require('../../lib/prisma')
 const crypto = require('crypto')
 
+const DEFAULT_AVATAR_URL = `${process.env.CALLBACK_URL}/public/avatar.png`
+
 exports.googleAuth = passport.authenticate('google', {
 	scope: ['profile', 'email'],
 })
@@ -57,7 +59,7 @@ exports.authSuccess = async (req, res) => {
 			email: req.user.email,
 			name: req.user.name || '',
 			provider: req.user.provider,
-			avatarUrl: req.user.avatarUrl || '',
+			avatarUrl: req.user.avatarUrl || DEFAULT_AVATAR_URL,
 		}
 
 		const state = crypto.randomBytes(16).toString('hex')

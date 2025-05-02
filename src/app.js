@@ -3,6 +3,7 @@ const cors = require('cors')
 const session = require('express-session')
 const passport = require('./services/authService')
 const { authRouter, classifiedsRouter } = require('./routes')
+const path = require('path')
 
 const app = express()
 
@@ -18,6 +19,8 @@ app.use(
 )
 app.use(passport.initialize())
 app.use(passport.session())
+
+app.use('/public', express.static(path.join(__dirname, 'public')))
 
 // Routes
 app.use('/', authRouter)

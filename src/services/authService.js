@@ -4,6 +4,8 @@ const FacebookStrategy = require('passport-facebook').Strategy
 const AppleStrategy = require('passport-apple').Strategy
 const prisma = require('../lib/prisma')
 
+const DEFAULT_AVATAR_URL = `${process.env.CALLBACK_URL}/public/avatar.png`
+
 passport.serializeUser((user, done) => {
 	done(null, user.id)
 })
@@ -31,7 +33,8 @@ passport.use(
 					where: { email: profile.emails[0].value },
 				})
 
-				const avatarUrl = profile.photos && profile.photos[0]?.value
+				const avatarUrl =
+					(profile.photos && profile.photos[0]?.value) || DEFAULT_AVATAR_URL
 
 				if (!user) {
 					user = await prisma.user.create({
@@ -43,7 +46,7 @@ passport.use(
 							avatarUrl,
 						},
 					})
-				} else if (!user.avatarUrl && avatarUrl) {
+				} else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {
 					user = await prisma.user.update({
 						where: { id: user.id },
 						data: { avatarUrl },
@@ -74,7 +77,8 @@ passport.use(
 					where: { email: profile.emails[0].value },
 				})
 
-				const avatarUrl = profile.photos && profile.photos[0]?.value
+				const avatarUrl =
+					(profile.photos && profile.photos[0]?.value) || DEFAULT_AVATAR_URL
 
 				if (!user) {
 					user = await prisma.user.create({
@@ -88,7 +92,7 @@ passport.use(
 							avatarUrl,
 						},
 					})
-				} else if (!user.avatarUrl && avatarUrl) {
+				} else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {
 					user = await prisma.user.update({
 						where: { id: user.id },
 						data: { avatarUrl },
@@ -121,7 +125,7 @@ passport.use(
 // 					where: { email: profile.email },
 // 				})
 
-// 				const avatarUrl = null
+// 				const avatarUrl = DEFAULT_AVATAR_URL;
 
 // 				if (!user) {
 // 					user = await prisma.user.create({
@@ -136,7 +140,7 @@ passport.use(
 // 							avatarUrl
 // 						},
 // 					})
-// 				} else if (!user.avatarUrl && avatarUrl) {
+// 				} else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {
 // 					user = await prisma.user.update({
 // 						where: { id: user.id },
 // 						data: { avatarUrl },
