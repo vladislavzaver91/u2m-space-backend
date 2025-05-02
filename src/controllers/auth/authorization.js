@@ -57,6 +57,7 @@ exports.authSuccess = async (req, res) => {
 			email: req.user.email,
 			name: req.user.name || '',
 			provider: req.user.provider,
+			avatarUrl: req.user.avatarUrl || '',
 		}
 
 		const state = crypto.randomBytes(16).toString('hex')

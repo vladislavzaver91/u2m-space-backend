@@ -31,6 +31,8 @@ passport.use(
 					where: { email: profile.emails[0].value },
 				})
 
+				const avatarUrl = profile.photos && profile.photos[0]?.value
+
 				if (!user) {
 					user = await prisma.user.create({
 						data: {
@@ -38,7 +40,13 @@ passport.use(
 							email: profile.emails[0].value,
 							name: profile.displayName || '',
 							provider: 'google',
+							avatarUrl,
 						},
+					})
+				} else if (!user.avatarUrl && avatarUrl) {
+					user = await prisma.user.update({
+						where: { id: user.id },
+						data: { avatarUrl },
 					})
 				}
 				console.log('Google user:', user)
@@ -58,13 +66,15 @@ passport.use(
 			clientID: process.env.FACEBOOK_CLIENT_ID,
 			clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
 			callbackURL: `${process.env.CALLBACK_URL}/api/auth/callback/facebook`,
-			profileFields: ['id', 'emails', 'name'],
+			profileFields: ['id', 'emails', 'name', 'photos'],
 		},
 		async (accessToken, refreshToken, profile, done) => {
 			try {
 				let user = await prisma.user.findUnique({
 					where: { email: profile.emails[0].value },
 				})
+
+				const avatarUrl = profile.photos && profile.photos[0]?.value
 
 				if (!user) {
 					user = await prisma.user.create({
@@ -75,7 +85,13 @@ passport.use(
 								profile.name.familyName || ''
 							}`.trim(),
 							provider: 'facebook',
+							avatarUrl,
 						},
+					})
+				} else if (!user.avatarUrl && avatarUrl) {
+					user = await prisma.user.update({
+						where: { id: user.id },
+						data: { avatarUrl },
 					})
 				}
 				console.log('Facebook user:', user)
@@ -105,18 +121,25 @@ passport.use(
 // 					where: { email: profile.email },
 // 				})
 
+// 				const avatarUrl = null
+
 // 				if (!user) {
 // 					user = await prisma.user.create({
 // 						data: {
 // 							id: profile.id,
 // 							email: profile.email,
 // 							name: profile.name
-// 								? `${profile.name.firstName || ''} ${
-// 										profile.name.lastName || ''
-// 								  }`.trim()
+// 								? `${profile.name.firstName || ''} ${profile.name.lastName || ''
+// 									}`.trim()
 // 								: '',
 // 							provider: 'apple',
+// 							avatarUrl
 // 						},
+// 					})
+// 				} else if (!user.avatarUrl && avatarUrl) {
+// 					user = await prisma.user.update({
+// 						where: { id: user.id },
+// 						data: { avatarUrl },
 // 					})
 // 				}
 // 				console.log('Apple user:', user)
