@@ -35,6 +35,7 @@ passport.use(
 
 				const avatarUrl =
 					(profile.photos && profile.photos[0]?.value) || DEFAULT_AVATAR_URL
+				console.log('Google avatarUrl:', avatarUrl)
 
 				if (!user) {
 					user = await prisma.user.create({
@@ -79,6 +80,7 @@ passport.use(
 
 				const avatarUrl =
 					(profile.photos && profile.photos[0]?.value) || DEFAULT_AVATAR_URL
+				console.log('Google avatarUrl:', avatarUrl)
 
 				if (!user) {
 					user = await prisma.user.create({
