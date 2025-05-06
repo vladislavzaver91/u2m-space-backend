@@ -8,6 +8,11 @@ const classifiedsData = Array.from({ length: 40 }, (_, index) => ({
 	price: 100 + index * 10,
 	images: [
 		'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png',
+		'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png',
+		'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png',
+		'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png',
+		'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png',
+		'https://developers.elementor.com/docs/assets/img/elementor-placeholder-image.png',
 	],
 	isActive: true,
 	createdAt: new Date(2025, 3, 28 - index),
