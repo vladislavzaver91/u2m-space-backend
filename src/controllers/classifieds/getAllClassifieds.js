@@ -2,7 +2,7 @@ const prisma = require('../../lib/prisma')
 
 const getAllClassifieds = async (req, res) => {
 	try {
-		const { limit = 20, offset = 0 } = req.query
+		const { limit = 20, offset = 0, tags } = req.query
 
 		const parsedLimit = parseInt(limit, 10)
 		const parsedOffset = parseInt(offset, 10)
@@ -32,6 +32,13 @@ const getAllClassifieds = async (req, res) => {
 			}
 		}
 
+		console.log('Executing Prisma query with params:', {
+			where,
+			parsedLimit,
+			parsedOffset,
+			tags,
+		})
+
 		const classifieds = await prisma.classified.findMany({
 			where,
 			orderBy: { createdAt: 'desc' },
@@ -39,24 +46,27 @@ const getAllClassifieds = async (req, res) => {
 				user: {
 					select: { name: true },
 				},
-				where: { name: { not: null } },
-			},
-			tags: {
-				include: {
-					tag: { select: { name: true } },
+				tags: {
+					include: {
+						tag: { select: { name: true } },
+					},
 				},
 			},
 			take: parsedLimit,
 			skip: parsedOffset,
 		})
 
-		const total = await prisma.classified.count({ where: { isActive: true } })
+		const total = await prisma.classified.count({ where })
 
 		return res.json({
 			classifieds: classifieds.map(c => ({
 				...c,
-				tags: c.tags.map(t => t.tag.name),
-				user: c.user || { name: 'Unknown' },
+				tags:
+					c.tags && Array.isArray(c.tags)
+						? c.tags.map(t => t.tag?.name || '')
+						: [],
+				user:
+					c.user && c.user.name ? { name: c.user.name } : { name: 'Unknown' },
 			})),
 			total,
 			hasMore: parsedOffset + classifieds.length < total,
@@ -65,6 +75,7 @@ const getAllClassifieds = async (req, res) => {
 		console.error('Error fetching classifieds:', {
 			message: error.message,
 			stack: error.stack,
+			queryParams: req.query,
 		})
 		return res.status(500).json({ error: 'Server error' })
 	}
