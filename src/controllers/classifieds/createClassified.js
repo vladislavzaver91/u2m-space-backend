@@ -9,6 +9,10 @@ const createClassified = async (req, res) => {
 	}
 
 	const { title, description, price, tags } = req.body
+	const files = req.files || []
+
+	console.log('Request body:', req.body)
+	console.log('Request files:', files)
 
 	// Валидация полей
 	if (!title || typeof title !== 'string' || title.length > 60) {
@@ -45,7 +49,7 @@ const createClassified = async (req, res) => {
 		for (const file of files) {
 			let buffer = file.buffer
 
-			// Дополнительное сжатие, если размер всё ещё > 5 МБ
+			// Дополнительное сжатие, если размер > 5 МБ
 			if (buffer.length > 5 * 1024 * 1024) {
 				buffer = await sharp(buffer)
 					.resize({ width: 1024, withoutEnlargement: true })
