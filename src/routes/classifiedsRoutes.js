@@ -1,4 +1,5 @@
 const express = require('express')
+const multer = require('multer')
 const authMiddleware = require('../middleware/auth')
 const {
 	getAllClassifieds,
@@ -18,12 +19,22 @@ const {
 
 const router = express.Router()
 
+const upload = multer({
+	storage: multer.memoryStorage(),
+	limits: { fileSize: 5 * 1024 * 1024 }, // Лимит 5 МБ на файл
+})
+
 // Публичные маршруты
 router.get('/api/classifieds', getAllClassifieds)
 router.get('/api/classifieds/:id', getClassifiedById)
 
 // Защищенные маршруты (требуют авторизации)
-router.post('/api/classifieds', authMiddleware, createClassified)
+router.post(
+	'/api/classifieds',
+	authMiddleware,
+	upload.array('images', 8),
+	createClassified
+)
 router.put('/api/classifieds/:id', authMiddleware, updateClassified)
 router.delete('/api/classifieds/:id', authMiddleware, deleteClassified)
 

@@ -8,7 +8,7 @@ const createClassified = async (req, res) => {
 		return res.status(401).json({ error: 'Unauthorized' })
 	}
 
-	const { title, description, price, images, tags } = req.body
+	const { title, description, price, tags } = req.body
 
 	// Валидация полей
 	if (!title || typeof title !== 'string' || title.length > 60) {
@@ -30,12 +30,7 @@ const createClassified = async (req, res) => {
 			.status(400)
 			.json({ error: 'Price is required and must be a positive number' })
 	}
-	if (
-		!images ||
-		!Array.isArray(images) ||
-		images.length < 1 ||
-		images.length > 8
-	) {
+	if (!files || files.length < 1 || files.length > 8) {
 		return res
 			.status(400)
 			.json({ error: 'At least 1 and up to 8 images are required' })
@@ -45,32 +40,32 @@ const createClassified = async (req, res) => {
 	}
 
 	try {
-		// Валидация и сжатие изображений
+		// Обработка и загрузка изображений
 		const imageUrls = []
-		for (const image of images) {
-			if (!image.startsWith('data:image/')) {
-				return res.status(400).json({ error: 'Invalid image format' })
-			}
+		for (const file of files) {
+			let buffer = file.buffer
 
-			const base64Data = image.split(',')[1]
-			const buffer = Buffer.from(base64Data, 'base64')
-
-			// Проверка размера файла (макс. 5 МБ)
+			// Дополнительное сжатие, если размер всё ещё > 5 МБ
 			if (buffer.length > 5 * 1024 * 1024) {
-				return res.status(400).json({ error: 'Image size exceeds 5MB' })
+				buffer = await sharp(buffer)
+					.resize({ width: 1024, withoutEnlargement: true })
+					.jpeg({ quality: 80 })
+					.toBuffer()
 			}
 
-			// Сжатие изображения
-			const compressedImage = await sharp(buffer)
-				.resize({ width: 1024, withoutEnlargement: true })
-				.jpeg({ quality: 80 })
-				.toBuffer()
+			// Проверка размера после сжатия
+			if (buffer.length > 5 * 1024 * 1024) {
+				return res.status(400).json({
+					error: `Image ${file.originalname} exceeds 5MB after compression`,
+				})
+			}
 
 			const fileName = `${uuidv4()}-${Date.now()}.jpg`
 			const { error } = await supabase.storage
 				.from('classified-images')
-				.upload(fileName, compressedImage, {
+				.upload(fileName, buffer, {
 					contentType: 'image/jpeg',
+					upsert: true,
 				})
 
 			if (error) {
@@ -96,6 +91,7 @@ const createClassified = async (req, res) => {
 			tagConnections.push({ tagId: tag.id })
 		}
 
+		// Создание объявления
 		const classified = await prisma.classified.create({
 			data: {
 				title,
@@ -122,7 +118,10 @@ const createClassified = async (req, res) => {
 			tags: classified.tags.map(t => t.tag.name),
 		})
 	} catch (error) {
-		console.error('Error creating classified:', error)
+		console.error('Error creating classified:', {
+			message: error.message,
+			stack: error.stack,
+		})
 		return res.status(500).json({ error: 'Server error' })
 	}
 }
