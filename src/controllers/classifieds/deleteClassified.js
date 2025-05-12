@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma')
+const supabase = require('../../lib/supabase')
 
 const deleteClassified = async (req, res) => {
 	if (!req.user) {
@@ -16,6 +17,11 @@ const deleteClassified = async (req, res) => {
 			return res.status(403).json({ error: 'Forbidden' })
 		}
 
+		// Удаляем изображения из Supabase
+		const imagePaths = classified.images.map(url => url.split('/').pop())
+		await supabase.storage.from('classified-images').remove(imagePaths)
+
+		// Удаляем объявление
 		await prisma.classified.delete({
 			where: { id },
 		})

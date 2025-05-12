@@ -16,10 +16,29 @@ const getAllClassifieds = async (req, res) => {
 			return res.status(400).json({ error: 'Invalid limit or offset' })
 		}
 
+		const where = { isActive: true }
+		if (tags) {
+			const tagArray = Array.isArray(tags) ? tags : [tags]
+			where.tags = {
+				some: {
+					tag: {
+						name: { in: tagArray },
+					},
+				},
+			}
+		}
+
 		const classifieds = await prisma.classified.findMany({
-			where: { isActive: true },
+			where,
 			orderBy: { createdAt: 'desc' },
-			include: { user: { select: { name: true } } },
+			include: {
+				user: { select: { name: true } },
+			},
+			tags: {
+				include: {
+					tag: { select: { name: true } },
+				},
+			},
 			take: parsedLimit,
 			skip: parsedOffset,
 		})
@@ -27,7 +46,10 @@ const getAllClassifieds = async (req, res) => {
 		const total = await prisma.classified.count({ where: { isActive: true } })
 
 		return res.json({
-			classifieds,
+			classifieds: classifieds.map(c => ({
+				...c,
+				tags: c.tags.map(t => t.tag.name),
+			})),
 			total,
 			hasMore: parsedOffset + classifieds.length < total,
 		})

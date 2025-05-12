@@ -38,14 +38,35 @@ model AuthState {
 }
 
 model Classified {
-  id          String   @id @default(uuid())
+  id          String          @id @default(uuid())
   title       String
   description String
   price       Float
   images      String[] // URLs изображений в Supabase Storage
-  isActive    Boolean  @default(true)
+  isActive    Boolean         @default(true)
+  views       Int             @default(0)
+  messages    Int             @default(0)
+  favorites   Int             @default(0)
   userId      String
-  user        User     @relation("UserClassifieds", fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  user        User            @relation("UserClassifieds", fields: [userId], references: [id], onDelete: Cascade)
+  tags        ClassifiedTag[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model Tag {
+  id          String          @id @default(uuid())
+  name        String          @unique
+  classifieds ClassifiedTag[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model ClassifiedTag {
+  classifiedId String
+  tagId        String
+  classified   Classified @relation(fields: [classifiedId], references: [id], onDelete: Cascade)
+  tag          Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([classifiedId, tagId])
 }
