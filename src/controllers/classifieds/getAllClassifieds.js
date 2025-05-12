@@ -16,6 +16,10 @@ const getAllClassifieds = async (req, res) => {
 			return res.status(400).json({ error: 'Invalid limit or offset' })
 		}
 
+		if (parsedOffset > 100000) {
+			return res.status(400).json({ error: 'Offset too large' })
+		}
+
 		const where = { isActive: true }
 		if (tags) {
 			const tagArray = Array.isArray(tags) ? tags : [tags]
@@ -32,7 +36,10 @@ const getAllClassifieds = async (req, res) => {
 			where,
 			orderBy: { createdAt: 'desc' },
 			include: {
-				user: { select: { name: true } },
+				user: {
+					select: { name: true },
+				},
+				where: { name: { not: null } },
 			},
 			tags: {
 				include: {
@@ -49,12 +56,16 @@ const getAllClassifieds = async (req, res) => {
 			classifieds: classifieds.map(c => ({
 				...c,
 				tags: c.tags.map(t => t.tag.name),
+				user: c.user || { name: 'Unknown' },
 			})),
 			total,
 			hasMore: parsedOffset + classifieds.length < total,
 		})
 	} catch (error) {
-		console.error('Error fetching classifieds:', error)
+		console.error('Error fetching classifieds:', {
+			message: error.message,
+			stack: error.stack,
+		})
 		return res.status(500).json({ error: 'Server error' })
 	}
 }
