@@ -39,7 +39,12 @@ router.post(
 	upload.array('images', 8),
 	createClassified
 )
-router.put('/api/classifieds/:id', authMiddleware, updateClassified)
+router.put(
+	'/api/classifieds/:id',
+	authMiddleware,
+	upload.array('images', 8),
+	updateClassified
+)
 router.delete('/api/classifieds/:id', authMiddleware, deleteClassified)
 
 module.exports = router

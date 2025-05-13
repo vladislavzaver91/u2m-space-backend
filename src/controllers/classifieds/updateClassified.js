@@ -9,7 +9,9 @@ const updateClassified = async (req, res) => {
 	}
 
 	const { id } = req.params
-	const { title, description, price, images, tags, isActive } = req.body
+	const { title, description, price, tags, isActive } = req.body
+	const existingImages = req.body['existingImages[]'] || []
+	const newImages = req.files || []
 
 	try {
 		const classified = await prisma.classified.findUnique({
@@ -38,37 +40,28 @@ const updateClassified = async (req, res) => {
 		if (price && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
 			return res.status(400).json({ error: 'Price must be a positive number' })
 		}
-		if (
-			images &&
-			(!Array.isArray(images) || images.length < 1 || images.length > 8)
-		) {
-			return res
-				.status(400)
-				.json({ error: 'At least 1 and up to 8 images are required' })
-		}
-		if (tags && !Array.isArray(tags)) {
-			return res.status(400).json({ error: 'Tags must be an array' })
-		}
 		if (isActive !== undefined && typeof isActive !== 'boolean') {
 			return res.status(400).json({ error: 'isActive must be a boolean' })
 		}
 
 		// Обработка изображений
-		let imageUrls = classified.images
-		if (images && Array.isArray(images)) {
-			// Удаляем старые изображения из Supabase
-			const oldImagePaths = classified.images.map(url => url.split('/').pop())
-			await supabase.storage.from('classified-images').remove(oldImagePaths)
+		let imageUrls = Array.isArray(existingImages)
+			? existingImages
+			: typeof existingImages === 'string'
+			? [existingImages]
+			: []
 
-			imageUrls = []
-			for (const image of images) {
-				if (!image.startsWith('data:image/')) {
-					return res.status(400).json({ error: 'Invalid image format' })
-				}
+		// Если есть новые изображения, загружаем их в Supabase
+		if (newImages.length > 0) {
+			// Удаляем старые изображения из Supabase, если они есть
+			if (classified.images && classified.images.length > 0) {
+				const oldImagePaths = classified.images.map(url => url.split('/').pop())
+				await supabase.storage.from('classified-images').remove(oldImagePaths)
+			}
 
-				const base64Data = image.split(',')[1]
-				const buffer = Buffer.from(base64Data, 'base64')
-
+			// Загружаем новые изображения
+			for (const image of newImages) {
+				const buffer = image.buffer
 				if (buffer.length > 5 * 1024 * 1024) {
 					return res.status(400).json({ error: 'Image size exceeds 5MB' })
 				}
@@ -98,16 +91,28 @@ const updateClassified = async (req, res) => {
 			}
 		}
 
+		// Валидация общего количества изображений
+		if (imageUrls.length < 1 || imageUrls.length > 8) {
+			return res
+				.status(400)
+				.json({ error: 'At least 1 and up to 8 images are required' })
+		}
+
 		// Обработка тегов
-		let = tagConnections = []
-		if (tags && Array.isArray(tags)) {
+		let tagConnections = []
+		const tagsArray = Array.isArray(tags)
+			? tags
+			: typeof tags === 'string'
+			? [tags]
+			: []
+		if (tagsArray.length > 0) {
 			// Удаляем старые связи
 			await prisma.classifiedTag.deleteMany({
 				where: { classifiedId: id },
 			})
 
 			// Создаём новые связи
-			for (const tagName of tags) {
+			for (const tagName of tagsArray) {
 				const tag = await prisma.tag.upsert({
 					where: { name: tagName },
 					update: {},
@@ -154,6 +159,7 @@ const updateClassified = async (req, res) => {
 			stack: error.stack,
 			classifiedId: id,
 			requestBody: req.body,
+			requestFiles: req.files,
 		})
 		return res.status(500).json({ error: 'Server error' })
 	}
