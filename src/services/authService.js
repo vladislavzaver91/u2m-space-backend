@@ -45,6 +45,8 @@ passport.use(
 							name: profile.displayName || '',
 							provider: 'google',
 							avatarUrl,
+							phoneNumber: null, // Провайдер не предоставляет телефон
+							successfulDeals: 0,
 						},
 					})
 				} else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {
@@ -92,6 +94,8 @@ passport.use(
 							}`.trim(),
 							provider: 'facebook',
 							avatarUrl,
+							phoneNumber: null,
+							successfulDeals: 0,
 						},
 					})
 				} else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {
@@ -139,7 +143,9 @@ passport.use(
 // 									}`.trim()
 // 								: '',
 // 							provider: 'apple',
-// 							avatarUrl
+// 							avatarUrl,
+//              phoneNumber: null,
+//              successfulDeals: 0,
 // 						},
 // 					})
 // 				} else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {

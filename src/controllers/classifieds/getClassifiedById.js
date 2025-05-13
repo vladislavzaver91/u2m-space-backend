@@ -9,7 +9,14 @@ const getClassifiedById = async (req, res) => {
 		const classified = await prisma.classified.findUnique({
 			where: { id },
 			include: {
-				user: { select: { name: true } },
+				user: {
+					select: {
+						name: true,
+						avatarUrl: true,
+						phoneNumber: true,
+						successfulDeals: true,
+					},
+				},
 				tags: {
 					include: {
 						tag: { select: { name: true } },
@@ -28,7 +35,24 @@ const getClassifiedById = async (req, res) => {
 		})
 
 		return res.json({
-			...classified,
+			id: classified.id,
+			title: classified.title,
+			description: classified.description,
+			price: classified.price,
+			images: classified.images,
+			isActive: classified.isActive,
+			createdAt: classified.createdAt,
+			views: classified.views,
+			messages: classified.messages,
+			favorites: classified.favorites,
+			user: {
+				name: classified.user.name || 'Аноним',
+				avatarUrl:
+					classified.user.avatarUrl ||
+					`${process.env.CALLBACK_URL}/public/avatar.png`,
+				phoneNumber: classified.user.phoneNumber,
+				successfulDeals: classified.user.successfulDeals,
+			},
 			tags: classified.tags.map(t => t.tag.name),
 		})
 	} catch (error) {
