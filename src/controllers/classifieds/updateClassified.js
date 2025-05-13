@@ -10,8 +10,11 @@ const updateClassified = async (req, res) => {
 
 	const { id } = req.params
 	const { title, description, price, tags, isActive } = req.body
-	const existingImages = req.body['existingImages[]'] || [] // Извлекаем существующие изображения
-	const newImages = req.files || [] // Новые изображения из multer
+	const existingImages = req.body['existingImages[]'] || []
+	const newImages = req.files || []
+
+	console.log('Request Body:', req.body)
+	console.log('Request Files:', req.files)
 
 	try {
 		const classified = await prisma.classified.findUnique({
@@ -23,107 +26,39 @@ const updateClassified = async (req, res) => {
 			return res.status(403).json({ error: 'Forbidden' })
 		}
 
-		// Валидация текстовых полей
-		if (title && (typeof title !== 'string' || title.length > 60)) {
-			return res
-				.status(400)
-				.json({ error: 'Title must be up to 60 characters' })
-		}
-		if (
-			description &&
-			(typeof description !== 'string' || description.length > 300)
-		) {
-			return res
-				.status(400)
-				.json({ error: 'Description must be up to 300 characters' })
-		}
-		if (price && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
-			return res.status(400).json({ error: 'Price must be a positive number' })
-		}
-		if (isActive !== undefined && typeof isActive !== 'boolean') {
-			return res.status(400).json({ error: 'isActive must be a boolean' })
-		}
-
-		// Обработка тегов
-		let tagConnections = []
-		const tagsArray = Array.isArray(tags)
-			? tags
-			: typeof tags === 'string'
-			? [tags]
-			: []
-		if (tagsArray.length > 0) {
-			// Удаляем старые связи
-			await prisma.classifiedTag.deleteMany({
-				where: { classifiedId: id },
-			})
-
-			// Создаём новые связи
-			for (const tagName of tagsArray) {
-				const tag = await prisma.tag.upsert({
-					where: { name: tagName },
-					update: {},
-					create: { name: tagName },
-				})
-				tagConnections.push({ tagId: tag.id })
-			}
-		}
-
-		// Обработка изображений
-		// Начинаем с существующих изображений, переданных с фронтенда
+		// Валидация и обработка тегов и изображений (оставляем как есть, но добавляем логи)
 		let imageUrls = Array.isArray(existingImages)
 			? existingImages
 			: typeof existingImages === 'string'
 			? [existingImages]
 			: []
-
-		// Если есть новые изображения, загружаем их в Supabase и добавляем к существующим
 		if (newImages.length > 0) {
-			// Проверяем, сколько изображений будет после добавления новых
 			const totalImages = imageUrls.length + newImages.length
 			if (totalImages > 8) {
 				return res.status(400).json({ error: 'Maximum 8 images allowed' })
 			}
-
-			// Загружаем новые изображения
 			for (const image of newImages) {
 				const buffer = image.buffer
-				if (buffer.length > 5 * 1024 * 1024) {
-					return res.status(400).json({ error: 'Image size exceeds 5MB' })
-				}
-
 				const compressedImage = await sharp(buffer)
 					.resize({ width: 1024, withoutEnlargement: true })
 					.jpeg({ quality: 80 })
 					.toBuffer()
-
 				const fileName = `${uuidv4()}-${Date.now()}.jpg`
 				const { error } = await supabase.storage
 					.from('classified-images')
-					.upload(fileName, compressedImage, {
-						contentType: 'image/jpeg',
-					})
-
-				if (error) {
-					console.error('Error uploading image:', error)
-					return res.status(500).json({ error: 'Failed to upload image' })
-				}
-
+					.upload(fileName, compressedImage, { contentType: 'image/jpeg' })
+				if (error) throw new Error(`Failed to upload image: ${error.message}`)
 				const { data: publicUrlData } = supabase.storage
 					.from('classified-images')
 					.getPublicUrl(fileName)
-
 				imageUrls.push(publicUrlData.publicUrl)
 			}
 		}
 
-		// Валидация общего количества изображений
-		if (imageUrls.length < 1 || imageUrls.length > 8) {
-			return res
-				.status(400)
-				.json({ error: 'At least 1 and up to 8 images are required' })
+		if (imageUrls.length < 1) {
+			return res.status(400).json({ error: 'At least 1 image is required' })
 		}
 
-		// Обновление объявления
 		const updateData = {
 			title: title || classified.title,
 			description: description || classified.description,
@@ -132,22 +67,29 @@ const updateClassified = async (req, res) => {
 			isActive: isActive !== undefined ? isActive : classified.isActive,
 		}
 
-		if (tagConnections.length > 0) {
-			updateData.tags = {
-				create: tagConnections,
+		if (tags) {
+			await prisma.classifiedTag.deleteMany({ where: { classifiedId: id } })
+			const tagConnections = []
+			const tagsArray = Array.isArray(tags)
+				? tags
+				: typeof tags === 'string'
+				? [tags]
+				: []
+			for (const tagName of tagsArray) {
+				const tag = await prisma.tag.upsert({
+					where: { name: tagName },
+					update: {},
+					create: { name: tagName },
+				})
+				tagConnections.push({ tagId: tag.id })
 			}
+			updateData.tags = { create: tagConnections }
 		}
 
 		const updatedClassified = await prisma.classified.update({
 			where: { id },
 			data: updateData,
-			include: {
-				tags: {
-					include: {
-						tag: { select: { name: true } },
-					},
-				},
-			},
+			include: { tags: { include: { tag: { select: { name: true } } } } },
 		})
 
 		return res.json({
@@ -155,15 +97,175 @@ const updateClassified = async (req, res) => {
 			tags: updatedClassified.tags.map(t => t.tag.name),
 		})
 	} catch (error) {
-		console.error('Error updating classified:', {
-			message: error.message,
-			stack: error.stack,
-			classifiedId: id,
-			requestBody: req.body,
-			requestFiles: req.files,
-		})
+		console.error('Error updating classified:', error.message, error.stack)
 		return res.status(500).json({ error: 'Server error' })
 	}
 }
+
+// const updateClassified = async (req, res) => {
+// 	if (!req.user) {
+// 		return res.status(401).json({ error: 'Unauthorized' })
+// 	}
+
+// 	const { id } = req.params
+// 	const { title, description, price, tags, isActive } = req.body
+// 	const existingImages = req.body['existingImages[]'] || [] // Извлекаем существующие изображения
+// 	const newImages = req.files || [] // Новые изображения из multer
+
+// 	console.log('Request Body:', req.body)
+// 	console.log('Request Files:', req.files)
+
+// 	try {
+// 		const classified = await prisma.classified.findUnique({
+// 			where: { id },
+// 			include: { tags: true },
+// 		})
+
+// 		if (!classified || classified.userId !== req.user.id) {
+// 			return res.status(403).json({ error: 'Forbidden' })
+// 		}
+
+// 		// Валидация текстовых полей
+// 		if (title && (typeof title !== 'string' || title.length > 60)) {
+// 			return res
+// 				.status(400)
+// 				.json({ error: 'Title must be up to 60 characters' })
+// 		}
+// 		if (
+// 			description &&
+// 			(typeof description !== 'string' || description.length > 300)
+// 		) {
+// 			return res
+// 				.status(400)
+// 				.json({ error: 'Description must be up to 300 characters' })
+// 		}
+// 		if (price && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
+// 			return res.status(400).json({ error: 'Price must be a positive number' })
+// 		}
+// 		if (isActive !== undefined && typeof isActive !== 'boolean') {
+// 			return res.status(400).json({ error: 'isActive must be a boolean' })
+// 		}
+
+// 		// Обработка тегов
+// 		let tagConnections = []
+// 		const tagsArray = Array.isArray(tags)
+// 			? tags
+// 			: typeof tags === 'string'
+// 			? [tags]
+// 			: []
+// 		if (tagsArray.length > 0) {
+// 			// Удаляем старые связи
+// 			await prisma.classifiedTag.deleteMany({
+// 				where: { classifiedId: id },
+// 			})
+
+// 			// Создаём новые связи
+// 			for (const tagName of tagsArray) {
+// 				const tag = await prisma.tag.upsert({
+// 					where: { name: tagName },
+// 					update: {},
+// 					create: { name: tagName },
+// 				})
+// 				tagConnections.push({ tagId: tag.id })
+// 			}
+// 		}
+
+// 		// Обработка изображений
+// 		// Начинаем с существующих изображений, переданных с фронтенда
+// 		let imageUrls = Array.isArray(existingImages)
+// 			? existingImages
+// 			: typeof existingImages === 'string'
+// 			? [existingImages]
+// 			: []
+
+// 		// Если есть новые изображения, загружаем их в Supabase и добавляем к существующим
+// 		if (newImages.length > 0) {
+// 			// Проверяем, сколько изображений будет после добавления новых
+// 			const totalImages = imageUrls.length + newImages.length
+// 			if (totalImages > 8) {
+// 				return res.status(400).json({ error: 'Maximum 8 images allowed' })
+// 			}
+
+// 			// Загружаем новые изображения
+// 			for (const image of newImages) {
+// 				const buffer = image.buffer
+// 				if (buffer.length > 5 * 1024 * 1024) {
+// 					return res.status(400).json({ error: 'Image size exceeds 5MB' })
+// 				}
+
+// 				const compressedImage = await sharp(buffer)
+// 					.resize({ width: 1024, withoutEnlargement: true })
+// 					.jpeg({ quality: 80 })
+// 					.toBuffer()
+
+// 				const fileName = `${uuidv4()}-${Date.now()}.jpg`
+// 				const { error } = await supabase.storage
+// 					.from('classified-images')
+// 					.upload(fileName, compressedImage, {
+// 						contentType: 'image/jpeg',
+// 					})
+
+// 				if (error) {
+// 					console.error('Error uploading image:', error)
+// 					return res.status(500).json({ error: 'Failed to upload image' })
+// 				}
+
+// 				const { data: publicUrlData } = supabase.storage
+// 					.from('classified-images')
+// 					.getPublicUrl(fileName)
+
+// 				imageUrls.push(publicUrlData.publicUrl)
+// 			}
+// 		}
+
+// 		// Валидация общего количества изображений
+// 		if (imageUrls.length < 1 || imageUrls.length > 8) {
+// 			return res
+// 				.status(400)
+// 				.json({ error: 'At least 1 and up to 8 images are required' })
+// 		}
+
+// 		// Обновление объявления
+// 		const updateData = {
+// 			title: title || classified.title,
+// 			description: description || classified.description,
+// 			price: price ? parseFloat(price) : classified.price,
+// 			images: imageUrls,
+// 			isActive: isActive !== undefined ? isActive : classified.isActive,
+// 		}
+
+// 		if (tagConnections.length > 0) {
+// 			updateData.tags = {
+// 				create: tagConnections,
+// 			}
+// 		}
+
+// 		const updatedClassified = await prisma.classified.update({
+// 			where: { id },
+// 			data: updateData,
+// 			include: {
+// 				tags: {
+// 					include: {
+// 						tag: { select: { name: true } },
+// 					},
+// 				},
+// 			},
+// 		})
+
+// 		return res.json({
+// 			...updatedClassified,
+// 			tags: updatedClassified.tags.map(t => t.tag.name),
+// 		})
+// 	} catch (error) {
+// 		console.error('Error updating classified:', {
+// 			message: error.message,
+// 			stack: error.stack,
+// 			classifiedId: id,
+// 			requestBody: req.body,
+// 			requestFiles: req.files,
+// 		})
+// 		return res.status(500).json({ error: 'Server error' })
+// 	}
+// }
 
 module.exports = { updateClassified }
