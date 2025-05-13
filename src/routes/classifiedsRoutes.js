@@ -16,6 +16,9 @@ const {
 const {
 	deleteClassified,
 } = require('../controllers/classifieds/deleteClassified')
+const {
+	getUserClassifieds,
+} = require('../controllers/classifieds/getUserClassifieds')
 
 const router = express.Router()
 
@@ -29,6 +32,7 @@ router.get('/api/classifieds', getAllClassifieds)
 router.get('/api/classifieds/:id', getClassifiedById)
 
 // Защищенные маршруты (требуют авторизации)
+router.get('/api/classifieds/user', authMiddleware, getUserClassifieds)
 router.post(
 	'/api/classifieds',
 	authMiddleware,

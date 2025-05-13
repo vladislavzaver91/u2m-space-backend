@@ -1,9 +1,9 @@
 const prisma = require('../../lib/prisma')
 
-const getAllClassifieds = async (req, res) => {
+const getUserClassifieds = async (req, res) => {
 	try {
-		const { limit = 20, offset = 0, tags } = req.query
-
+		const userId = req.user.id
+		const { limit = 20, offset = 0 } = req.query
 		const parsedLimit = parseInt(limit, 10)
 		const parsedOffset = parseInt(offset, 10)
 
@@ -13,35 +13,13 @@ const getAllClassifieds = async (req, res) => {
 			parsedLimit < 1 ||
 			parsedOffset < 0
 		) {
-			return res.status(400).json({ error: 'Invalid limit or offset' })
+			return res
+				.status(400)
+				.json({ error: 'Недопустимые параметры limit или offset' })
 		}
-
-		if (parsedOffset > 100000) {
-			return res.status(400).json({ error: 'Offset too large' })
-		}
-
-		const where = { isActive: true }
-		if (tags) {
-			const tagArray = Array.isArray(tags) ? tags : [tags]
-			where.tags = {
-				some: {
-					tag: {
-						name: { in: tagArray },
-					},
-				},
-			}
-		}
-
-		console.log('Executing Prisma query with params:', {
-			where,
-			parsedLimit,
-			parsedOffset,
-			tags,
-		})
 
 		const classifieds = await prisma.classified.findMany({
-			where,
-			orderBy: { createdAt: 'desc' },
+			where: { userId },
 			include: {
 				user: {
 					select: {
@@ -51,17 +29,13 @@ const getAllClassifieds = async (req, res) => {
 						successfulDeals: true,
 					},
 				},
-				tags: {
-					include: {
-						tag: { select: { name: true } },
-					},
-				},
 			},
+			orderBy: { createdAt: 'desc' },
 			take: parsedLimit,
 			skip: parsedOffset,
 		})
 
-		const total = await prisma.classified.count({ where })
+		const total = await prisma.classified.count({ where: { userId } })
 		const hasMore = parsedOffset + classifieds.length < total
 
 		return res.json({
@@ -84,16 +58,12 @@ const getAllClassifieds = async (req, res) => {
 					phoneNumber: classified.user.phoneNumber,
 					successfulDeals: classified.user.successfulDeals,
 				},
-				tags:
-					classified.tags && Array.isArray(classified.tags)
-						? classified.tags.map(t => t.tag?.name || '')
-						: [],
 			})),
 			total,
 			hasMore,
 		})
 	} catch (error) {
-		console.error('Error fetching classifieds:', {
+		console.error('Error fetching user classifieds:', {
 			message: error.message,
 			stack: error.stack,
 			queryParams: req.query,
@@ -102,4 +72,4 @@ const getAllClassifieds = async (req, res) => {
 	}
 }
 
-module.exports = { getAllClassifieds }
+module.exports = { getUserClassifieds }
