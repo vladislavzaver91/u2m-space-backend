@@ -49,6 +49,9 @@ const updateClassified = async (req, res) => {
 		if (tags && !Array.isArray(tags)) {
 			return res.status(400).json({ error: 'Tags must be an array' })
 		}
+		if (isActive !== undefined && typeof isActive !== 'boolean') {
+			return res.status(400).json({ error: 'isActive must be a boolean' })
+		}
 
 		// Обработка изображений
 		let imageUrls = classified.images
@@ -96,7 +99,7 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Обработка тегов
-		let tagConnections = classified.tags
+		let = tagConnections = []
 		if (tags && Array.isArray(tags)) {
 			// Удаляем старые связи
 			await prisma.classifiedTag.deleteMany({
@@ -104,7 +107,6 @@ const updateClassified = async (req, res) => {
 			})
 
 			// Создаём новые связи
-			tagConnections = []
 			for (const tagName of tags) {
 				const tag = await prisma.tag.upsert({
 					where: { name: tagName },
@@ -116,18 +118,23 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Обновление объявления
+		const updateData = {
+			title: title || classified.title,
+			description: description || classified.description,
+			price: price ? parseFloat(price) : classified.price,
+			images: imageUrls,
+			isActive: isActive !== undefined ? isActive : classified.isActive,
+		}
+
+		if (tagConnections.length > 0) {
+			updateData.tags = {
+				create: tagConnections,
+			}
+		}
+
 		const updatedClassified = await prisma.classified.update({
 			where: { id },
-			data: {
-				title: title || classified.title,
-				description: description || classified.description,
-				price: price ? parseFloat(price) : classified.price,
-				images: imageUrls,
-				isActive: isActive !== undefined ? isActive : classified.isActive,
-				tags: {
-					create: tagConnections,
-				},
-			},
+			data: updateData,
 			include: {
 				tags: {
 					include: {
@@ -142,7 +149,12 @@ const updateClassified = async (req, res) => {
 			tags: updatedClassified.tags.map(t => t.tag.name),
 		})
 	} catch (error) {
-		console.error('Error updating classified:', error)
+		console.error('Error updating classified:', {
+			message: error.message,
+			stack: error.stack,
+			classifiedId: id,
+			requestBody: req.body,
+		})
 		return res.status(500).json({ error: 'Server error' })
 	}
 }
