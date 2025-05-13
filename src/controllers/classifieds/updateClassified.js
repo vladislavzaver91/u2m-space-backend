@@ -10,8 +10,8 @@ const updateClassified = async (req, res) => {
 
 	const { id } = req.params
 	const { title, description, price, tags, isActive } = req.body
-	const existingImages = req.body['existingImages[]'] || []
-	const newImages = req.files || []
+	const existingImages = req.body['existingImages[]'] || [] // Извлекаем существующие изображения
+	const newImages = req.files || [] // Новые изображения из multer
 
 	try {
 		const classified = await prisma.classified.findUnique({
@@ -23,7 +23,7 @@ const updateClassified = async (req, res) => {
 			return res.status(403).json({ error: 'Forbidden' })
 		}
 
-		// Валидация полей
+		// Валидация текстовых полей
 		if (title && (typeof title !== 'string' || title.length > 60)) {
 			return res
 				.status(400)
@@ -44,19 +44,44 @@ const updateClassified = async (req, res) => {
 			return res.status(400).json({ error: 'isActive must be a boolean' })
 		}
 
+		// Обработка тегов
+		let tagConnections = []
+		const tagsArray = Array.isArray(tags)
+			? tags
+			: typeof tags === 'string'
+			? [tags]
+			: []
+		if (tagsArray.length > 0) {
+			// Удаляем старые связи
+			await prisma.classifiedTag.deleteMany({
+				where: { classifiedId: id },
+			})
+
+			// Создаём новые связи
+			for (const tagName of tagsArray) {
+				const tag = await prisma.tag.upsert({
+					where: { name: tagName },
+					update: {},
+					create: { name: tagName },
+				})
+				tagConnections.push({ tagId: tag.id })
+			}
+		}
+
 		// Обработка изображений
+		// Начинаем с существующих изображений, переданных с фронтенда
 		let imageUrls = Array.isArray(existingImages)
 			? existingImages
 			: typeof existingImages === 'string'
 			? [existingImages]
 			: []
 
-		// Если есть новые изображения, загружаем их в Supabase
+		// Если есть новые изображения, загружаем их в Supabase и добавляем к существующим
 		if (newImages.length > 0) {
-			// Удаляем старые изображения из Supabase, если они есть
-			if (classified.images && classified.images.length > 0) {
-				const oldImagePaths = classified.images.map(url => url.split('/').pop())
-				await supabase.storage.from('classified-images').remove(oldImagePaths)
+			// Проверяем, сколько изображений будет после добавления новых
+			const totalImages = imageUrls.length + newImages.length
+			if (totalImages > 8) {
+				return res.status(400).json({ error: 'Maximum 8 images allowed' })
 			}
 
 			// Загружаем новые изображения
@@ -96,30 +121,6 @@ const updateClassified = async (req, res) => {
 			return res
 				.status(400)
 				.json({ error: 'At least 1 and up to 8 images are required' })
-		}
-
-		// Обработка тегов
-		let tagConnections = []
-		const tagsArray = Array.isArray(tags)
-			? tags
-			: typeof tags === 'string'
-			? [tags]
-			: []
-		if (tagsArray.length > 0) {
-			// Удаляем старые связи
-			await prisma.classifiedTag.deleteMany({
-				where: { classifiedId: id },
-			})
-
-			// Создаём новые связи
-			for (const tagName of tagsArray) {
-				const tag = await prisma.tag.upsert({
-					where: { name: tagName },
-					update: {},
-					create: { name: tagName },
-				})
-				tagConnections.push({ tagId: tag.id })
-			}
 		}
 
 		// Обновление объявления
