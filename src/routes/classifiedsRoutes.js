@@ -29,10 +29,10 @@ const upload = multer({
 
 // Публичные маршруты
 router.get('/api/classifieds', getAllClassifieds)
+router.get('/api/classifieds/user', authMiddleware, getUserClassifieds)
 router.get('/api/classifieds/:id', getClassifiedById)
 
 // Защищенные маршруты (требуют авторизации)
-router.get('/api/classifieds/user', authMiddleware, getUserClassifieds)
 router.post(
 	'/api/classifieds',
 	authMiddleware,

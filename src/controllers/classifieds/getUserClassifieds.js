@@ -3,7 +3,7 @@ const prisma = require('../../lib/prisma')
 const getUserClassifieds = async (req, res) => {
 	try {
 		const userId = req.user.id
-		const { limit = 20, offset = 0 } = req.query
+		const { limit = 20, offset = 0, tags } = req.query
 		const parsedLimit = parseInt(limit, 10)
 		const parsedOffset = parseInt(offset, 10)
 
@@ -18,6 +18,7 @@ const getUserClassifieds = async (req, res) => {
 				.json({ error: 'Недопустимые параметры limit или offset' })
 		}
 
+		const where = { userId }
 		if (tags) {
 			const tagArray = Array.isArray(tags) ? tags : [tags]
 			where.tags = {
@@ -30,7 +31,7 @@ const getUserClassifieds = async (req, res) => {
 		}
 
 		const classifieds = await prisma.classified.findMany({
-			where: { userId },
+			where,
 			include: {
 				user: {
 					select: {
@@ -51,7 +52,7 @@ const getUserClassifieds = async (req, res) => {
 			skip: parsedOffset,
 		})
 
-		const total = await prisma.classified.count({ where: { userId } })
+		const total = await prisma.classified.count({ where })
 		const hasMore = parsedOffset + classifieds.length < total
 
 		return res.json({
@@ -83,12 +84,12 @@ const getUserClassifieds = async (req, res) => {
 			hasMore,
 		})
 	} catch (error) {
-		console.error('Error fetching user classifieds:', {
+		console.error('Ошибка при получении объявлений пользователя:', {
 			message: error.message,
 			stack: error.stack,
 			queryParams: req.query,
 		})
-		return res.status(500).json({ error: 'Server error' })
+		return res.status(500).json({ error: 'Ошибка сервера' })
 	}
 }
 
