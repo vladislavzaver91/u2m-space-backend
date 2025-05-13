@@ -4,14 +4,16 @@ const getClassifiedById = async (req, res) => {
 	const { id } = req.params
 
 	try {
+		console.log(`Fetching classified with ID: ${id}`)
+
 		const classified = await prisma.classified.findUnique({
 			where: { id },
 			include: {
 				user: { select: { name: true } },
-			},
-			tags: {
-				include: {
-					tag: { select: { name: true } },
+				tags: {
+					include: {
+						tag: { select: { name: true } },
+					},
 				},
 			},
 		})
