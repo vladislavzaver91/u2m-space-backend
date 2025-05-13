@@ -18,6 +18,17 @@ const getUserClassifieds = async (req, res) => {
 				.json({ error: 'Недопустимые параметры limit или offset' })
 		}
 
+		if (tags) {
+			const tagArray = Array.isArray(tags) ? tags : [tags]
+			where.tags = {
+				some: {
+					tag: {
+						name: { in: tagArray },
+					},
+				},
+			}
+		}
+
 		const classifieds = await prisma.classified.findMany({
 			where: { userId },
 			include: {
@@ -27,6 +38,11 @@ const getUserClassifieds = async (req, res) => {
 						avatarUrl: true,
 						phoneNumber: true,
 						successfulDeals: true,
+					},
+				},
+				tags: {
+					include: {
+						tag: { select: { name: true } },
 					},
 				},
 			},
@@ -58,6 +74,10 @@ const getUserClassifieds = async (req, res) => {
 					phoneNumber: classified.user.phoneNumber,
 					successfulDeals: classified.user.successfulDeals,
 				},
+				tags:
+					classified.tags && Array.isArray(classified.tags)
+						? classified.tags.map(t => t.tag?.name || '')
+						: [],
 			})),
 			total,
 			hasMore,
