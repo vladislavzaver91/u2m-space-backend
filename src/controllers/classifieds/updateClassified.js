@@ -16,14 +16,14 @@ const updateClassified = async (req, res) => {
 		? Array.isArray(req.body['tags[]'])
 			? req.body['tags[]']
 			: [req.body['tags[]']]
-		: undefined
+		: []
 	const isActive =
 		req.body.isActive !== undefined ? req.body.isActive : undefined
 	const existingImages = req.body['existingImages[]']
 		? Array.isArray(req.body['existingImages[]'])
 			? req.body['existingImages[]']
 			: [req.body['existingImages[]']]
-		: undefined
+		: []
 	const newImages = req.files || []
 
 	console.log('Request Body:', req.body)
@@ -62,12 +62,39 @@ const updateClassified = async (req, res) => {
 				.json({ error: 'isActive must be a string ("true" or "false")' })
 		}
 
+		// Обработка тегов
+		if (tags.length > 0) {
+			// Удаляем старые связи
+			await prisma.classifiedTag.deleteMany({
+				where: { classifiedId: id },
+			})
+
+			// Создаём новые теги и связи
+			const uniqueTags = [
+				...new Set(
+					tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
+				),
+			]
+			for (const tagName of uniqueTags) {
+				const tag = await prisma.tag.upsert({
+					where: { name: tagName.trim() },
+					update: {},
+					create: { name: tagName.trim() },
+				})
+				await prisma.classifiedTag.create({
+					data: {
+						classifiedId: id,
+						tagId: tag.id,
+					},
+				})
+			}
+		}
+
 		// Обработка изображений
 		let imageUrls = []
-		if (existingImages && existingImages.length > 0) {
+		if (existingImages.length > 0) {
+			// Используем только те изображения, которые переданы с фронтенда, в их порядке
 			imageUrls = existingImages.filter(url => url.startsWith('https://'))
-		} else {
-			imageUrls = classified.images // Используем старые изображения, если existingImages не переданы
 		}
 
 		if (newImages.length > 0) {
@@ -107,37 +134,10 @@ const updateClassified = async (req, res) => {
 			}
 		}
 
-		// Валидация общего количества изображений
 		if (imageUrls.length < 1 || imageUrls.length > 8) {
 			return res
 				.status(400)
 				.json({ error: 'At least 1 and up to 8 images are required' })
-		}
-
-		// Обработка тегов
-		let tagConnections = []
-		if (tags !== undefined) {
-			await prisma.classifiedTag.deleteMany({
-				where: { classifiedId: id },
-			})
-
-			if (tags && tags.length > 0) {
-				console.log('Processing tags:', tags)
-				const uniqueTags = [
-					...new Set(
-						tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
-					),
-				]
-				for (const tagName of uniqueTags) {
-					const tag = await prisma.tag.upsert({
-						where: { name: tagName.trim() },
-						update: {},
-						create: { name: tagName.trim() },
-					})
-					tagConnections.push({ tagId: tag.id })
-					console.log('Created/Updated tag:', tagName)
-				}
-			}
 		}
 
 		// Обновление объявления
@@ -148,12 +148,6 @@ const updateClassified = async (req, res) => {
 			images: imageUrls,
 			isActive:
 				isActive !== undefined ? isActive === 'true' : classified.isActive,
-		}
-
-		if (tagConnections.length > 0) {
-			updateData.tags = {
-				create: tagConnections,
-			}
 		}
 
 		const updatedClassified = await prisma.classified.update({
