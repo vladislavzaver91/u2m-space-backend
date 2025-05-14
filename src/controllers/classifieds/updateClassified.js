@@ -64,32 +64,32 @@ const updateClassified = async (req, res) => {
 
 		// Обработка тегов
 		let tagConnections = []
-		const tagsArray = Array.isArray(tags)
-			? tags
-			: typeof tags === 'string'
-			? [tags]
-			: []
-
-		if (tagsArray.length > 0) {
+		if (tags && tags.length > 0) {
+			console.log('Processing tags:', tags)
 			await prisma.classifiedTag.deleteMany({
 				where: { classifiedId: id },
 			})
-
-			for (const tagName of tagsArray) {
-				const tag = await prisma.tag.upsert({
-					where: { name: tagName },
-					update: {},
-					create: { name: tagName },
-				})
-				tagConnections.push({ tagId: tag.id })
+			const uniqueTags = [...new Set(tags)]
+			for (const tagName of uniqueTags) {
+				if (typeof tagName === 'string' && tagName.trim().length > 0) {
+					const tag = await prisma.tag.upsert({
+						where: { name: tagName.trim() },
+						update: {},
+						create: { name: tagName.trim() },
+					})
+					tagConnections.push({ tagId: tag.id })
+					console.log('Created/Updated tag:', tagName)
+				}
 			}
 		}
 
 		// Обработка изображений
-		let imageUrls = [...classified.images] // Берем исходные изображения из базы
+		let imageUrls = []
 		if (existingImages.length > 0) {
-			// Фильтруем только те existingImages, которые пришли из фронтенда
-			imageUrls = imageUrls.filter(url => existingImages.includes(url))
+			// Сохраняем порядок из existingImages
+			imageUrls = existingImages.filter(url => classified.images.includes(url)) // Берем только существующие URL
+		} else {
+			imageUrls = [...classified.images] // Если existingImages пуст, используем текущие
 		}
 		if (newImages.length > 0) {
 			const totalImages = imageUrls.length + newImages.length
