@@ -63,11 +63,12 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Обработка тегов
+		let tagConnections = []
 		if (tags !== undefined) {
 			await prisma.classifiedTag.deleteMany({
 				where: { classifiedId: id },
 			})
-			let tagConnections = []
+
 			if (tags && tags.length > 0) {
 				console.log('Processing tags:', tags)
 				const uniqueTags = [
@@ -149,7 +150,7 @@ const updateClassified = async (req, res) => {
 
 		if (tags !== undefined) {
 			updateData.tags = {
-				create: tagConnections || [],
+				create: tagConnections,
 			}
 		}
 
