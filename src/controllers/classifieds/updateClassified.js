@@ -56,10 +56,12 @@ const updateClassified = async (req, res) => {
 		if (price && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
 			return res.status(400).json({ error: 'Price must be a positive number' })
 		}
-		if (isActive !== undefined && typeof isActive !== 'string') {
-			return res
-				.status(400)
-				.json({ error: 'isActive must be a string ("true" or "false")' })
+		if (isActive !== undefined) {
+			if (isActive !== 'true' && isActive !== 'false') {
+				return res
+					.status(400)
+					.json({ error: 'isActive must be "true" or "false"' })
+			}
 		}
 
 		// Обработка тегов
@@ -146,7 +148,7 @@ const updateClassified = async (req, res) => {
 			title: title || classified.title,
 			description: description || classified.description,
 			price: price ? parseFloat(price) : classified.price,
-			images: imageUrls,
+			images: imageUrls.length > 0 ? imageUrls : classified.images,
 			isActive:
 				isActive !== undefined ? isActive === 'true' : classified.isActive,
 		}
