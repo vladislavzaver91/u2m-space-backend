@@ -9,8 +9,21 @@ const updateClassified = async (req, res) => {
 	}
 
 	const { id } = req.params
-	const { title, description, price, tags, isActive } = req.body
-	const existingImages = req.body['existingImages[]'] || []
+	const title = req.body.title || undefined
+	const description = req.body.description || undefined
+	const price = req.body.price || undefined
+	const tags = req.body['tags[]']
+		? Array.isArray(req.body['tags[]'])
+			? req.body['tags[]']
+			: [req.body['tags[]']]
+		: undefined
+	const isActive =
+		req.body.isActive !== undefined ? req.body.isActive : undefined
+	const existingImages = req.body['existingImages[]']
+		? Array.isArray(req.body['existingImages[]'])
+			? req.body['existingImages[]']
+			: [req.body['existingImages[]']]
+		: []
 	const newImages = req.files || []
 
 	console.log('Request Body:', req.body)
@@ -51,19 +64,11 @@ const updateClassified = async (req, res) => {
 
 		// Обработка тегов
 		let tagConnections = []
-		const tagsArray = Array.isArray(tags)
-			? tags
-			: typeof tags === 'string'
-			? [tags]
-			: []
-		if (tagsArray.length > 0) {
-			// Удаляем старые связи
+		if (tags && tags.length > 0) {
 			await prisma.classifiedTag.deleteMany({
 				where: { classifiedId: id },
 			})
-
-			// Создаём новые связи
-			for (const tagName of tagsArray) {
+			for (const tagName of tags) {
 				const tag = await prisma.tag.upsert({
 					where: { name: tagName },
 					update: {},
@@ -74,19 +79,17 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Обработка изображений
-		let imageUrls = Array.isArray(existingImages)
-			? existingImages
-			: typeof existingImages === 'string'
-			? [existingImages]
-			: []
-
+		let imageUrls = [...classified.images] // Берем исходные изображения из базы
+		if (existingImages.length > 0) {
+			// Фильтруем только те existingImages, которые пришли из фронтенда
+			imageUrls = imageUrls.filter(url => existingImages.includes(url))
+		}
 		if (newImages.length > 0) {
 			const totalImages = imageUrls.length + newImages.length
 			if (totalImages > 8) {
 				return res.status(400).json({ error: 'Maximum 8 images allowed' })
 			}
 
-			// Загружаем новые изображения
 			for (const image of newImages) {
 				const buffer = image.buffer
 				if (buffer.length > 5 * 1024 * 1024) {
