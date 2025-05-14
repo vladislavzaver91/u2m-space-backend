@@ -93,10 +93,11 @@ const updateClassified = async (req, res) => {
 		// Обработка изображений
 		let imageUrls = []
 		if (existingImages.length > 0) {
-			// Используем только те изображения, которые переданы с фронтенда, в их порядке
+			// Сохраняем порядок существующих изображений
 			imageUrls = existingImages.filter(url => url.startsWith('https://'))
 		}
 
+		// Добавляем новые изображения в конец
 		if (newImages.length > 0) {
 			const totalImages = imageUrls.length + newImages.length
 			if (totalImages > 8) {
