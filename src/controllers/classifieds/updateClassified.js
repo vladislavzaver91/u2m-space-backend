@@ -14,21 +14,26 @@ const updateClassified = async (req, res) => {
 	const description = req.body.description || undefined
 	console.log('req.body.description', req.body.description)
 	const price = req.body.price || undefined
-	const tags = Array.isArray(req.body.tags)
-		? req.body.tags
-		: req.body.tags
-		? [req.body.tags]
-		: undefined
-	console.log('req.body.tags', req.body.tags)
-	const existingImages = Array.isArray(req.body.existingImages)
-		? req.body.existingImages
-		: req.body.existingImages
-		? [req.body.existingImages]
-		: undefined
-	console.log('req.body.existingImages', req.body.existingImages)
+	let tags = []
+	if (req.body['tags[]']) {
+		tags = Array.isArray(req.body['tags[]'])
+			? req.body['tags[]']
+			: [req.body['tags[]']]
+	} else if (req.body.getAll) {
+		// Для FormData
+		tags = req.body.getAll('tags[]') || []
+	}
 	const isActive =
 		req.body.isActive !== undefined ? req.body.isActive : undefined
-
+	let existingImages = []
+	if (req.body['existingImages[]']) {
+		existingImages = Array.isArray(req.body['existingImages[]'])
+			? req.body['existingImages[]']
+			: [req.body['existingImages[]']]
+	} else if (req.body.getAll) {
+		// Для FormData
+		existingImages = req.body.getAll('existingImages[]') || []
+	}
 	const newImages = req.files || []
 
 	console.log('Request Body:', req.body)
@@ -46,6 +51,10 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Валидация текстовых полей
+		tags = tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
+		existingImages = existingImages.filter(
+			url => typeof url === 'string' && url.startsWith('https://')
+		)
 		if (title && (typeof title !== 'string' || title.length > 60)) {
 			return res
 				.status(400)
