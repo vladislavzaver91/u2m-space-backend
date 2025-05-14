@@ -64,11 +64,18 @@ const updateClassified = async (req, res) => {
 
 		// Обработка тегов
 		let tagConnections = []
-		if (tags && tags.length > 0) {
+		const tagsArray = Array.isArray(tags)
+			? tags
+			: typeof tags === 'string'
+			? [tags]
+			: []
+
+		if (tagsArray.length > 0) {
 			await prisma.classifiedTag.deleteMany({
 				where: { classifiedId: id },
 			})
-			for (const tagName of tags) {
+
+			for (const tagName of tagsArray) {
 				const tag = await prisma.tag.upsert({
 					where: { name: tagName },
 					update: {},
