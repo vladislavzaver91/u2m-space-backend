@@ -10,20 +10,25 @@ const updateClassified = async (req, res) => {
 
 	const { id } = req.params
 	const title = req.body.title || undefined
+	console.log('req.body.title', req.body.title)
 	const description = req.body.description || undefined
+	console.log('req.body.description', req.body.description)
 	const price = req.body.price || undefined
-	const tags = req.body['tags[]']
-		? Array.isArray(req.body['tags[]'])
-			? req.body['tags[]']
-			: [req.body['tags[]']]
+	const tags = Array.isArray(req.body.tags)
+		? req.body.tags
+		: req.body.tags
+		? [req.body.tags]
 		: undefined
+	console.log('req.body.tags', req.body.tags)
+	const existingImages = Array.isArray(req.body.existingImages)
+		? req.body.existingImages
+		: req.body.existingImages
+		? [req.body.existingImages]
+		: undefined
+	console.log('req.body.existingImages', req.body.existingImages)
 	const isActive =
 		req.body.isActive !== undefined ? req.body.isActive : undefined
-	const existingImages = req.body['existingImages[]']
-		? Array.isArray(req.body['existingImages[]'])
-			? req.body['existingImages[]']
-			: [req.body['existingImages[]']]
-		: undefined // Изменено с [] на undefined
+
 	const newImages = req.files || []
 
 	console.log('Request Body:', req.body)
