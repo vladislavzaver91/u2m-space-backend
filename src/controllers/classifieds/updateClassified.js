@@ -10,27 +10,41 @@ const updateClassified = async (req, res) => {
 
 	const { id } = req.params
 	const title = req.body.title || undefined
-	console.log('req.body.title', req.body.title)
 	const description = req.body.description || undefined
-	console.log('req.body.description', req.body.description)
 	const price = req.body.price || undefined
-	const tags = req.body['tags[]']
-		? Array.isArray(req.body['tags[]'])
+
+	let tags = []
+	if (req.body['tags[]']) {
+		tags = Array.isArray(req.body['tags[]'])
 			? req.body['tags[]']
 			: [req.body['tags[]']]
-		: undefined
+	} else if (req.body.getAll) {
+		tags = req.body.getAll('tags[]') || []
+	}
+	tags = tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
+
 	const isActive =
 		req.body.isActive !== undefined ? req.body.isActive : undefined
-	const existingImages = req.body['existingImages[]']
-		? Array.isArray(req.body['existingImages[]'])
+
+	let existingImages = []
+	if (req.body['existingImages[]']) {
+		existingImages = Array.isArray(req.body['existingImages[]'])
 			? req.body['existingImages[]']
 			: [req.body['existingImages[]']]
-		: undefined // Изменено с [] на undefined
+	} else if (req.body.getAll) {
+		existingImages = req.body.getAll('existingImages[]') || []
+	}
+	existingImages = existingImages.filter(
+		url => typeof url === 'string' && url.startsWith('https://')
+	)
+
 	const newImages = req.files || []
 
 	console.log('Request Body:', req.body)
 	console.log('Request Files:', req.files)
 	console.log('All keys in req.body:', Object.keys(req.body))
+	console.log('Parsed tags:', tags)
+	console.log('Parsed existingImages:', existingImages)
 
 	try {
 		const classified = await prisma.classified.findUnique({
@@ -66,36 +80,36 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Обработка тегов
-		if (tags !== undefined) {
+		if (tags.length > 0) {
 			await prisma.classifiedTag.deleteMany({
 				where: { classifiedId: id },
 			})
 			let tagConnections = []
-			if (tags && tags.length > 0) {
-				console.log('Processing tags:', tags)
-				const uniqueTags = [
-					...new Set(
-						tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
-					),
-				]
-				for (const tagName of uniqueTags) {
-					const tag = await prisma.tag.upsert({
-						where: { name: tagName.trim() },
-						update: {},
-						create: { name: tagName.trim() },
-					})
-					tagConnections.push({ tagId: tag.id })
-					console.log('Created/Updated tag:', tagName)
-				}
+			const uniqueTags = [...new Set(tags)]
+			for (const tagName of uniqueTags) {
+				const tag = await prisma.tag.upsert({
+					where: { name: tagName.trim() },
+					update: {},
+					create: { name: tagName.trim() },
+				})
+				tagConnections.push({ tagId: tag.id })
+				console.log('Created/Updated tag:', tagName)
+			}
+			if (tagConnections.length > 0) {
+				await prisma.classified.update({
+					where: { id },
+					data: {
+						tags: {
+							create: tagConnections,
+						},
+					},
+				})
 			}
 		}
 
 		// Обработка изображений
-		let imageUrls = classified.images // Используем существующие изображения из базы
-		if (existingImages !== undefined) {
-			// Если переданы existingImages, используем их порядок
-			imageUrls = existingImages.filter(url => url.startsWith('https://'))
-		}
+		let imageUrls =
+			existingImages.length > 0 ? existingImages : classified.images
 		if (newImages.length > 0) {
 			const totalImages = imageUrls.length + newImages.length
 			if (totalImages > 8) {
@@ -133,7 +147,6 @@ const updateClassified = async (req, res) => {
 			}
 		}
 
-		// Валидация общего количества изображений
 		if (imageUrls.length < 1 || imageUrls.length > 8) {
 			return res
 				.status(400)
@@ -148,12 +161,6 @@ const updateClassified = async (req, res) => {
 			images: imageUrls,
 			isActive:
 				isActive !== undefined ? isActive === 'true' : classified.isActive,
-		}
-
-		if (tags !== undefined) {
-			updateData.tags = {
-				create: tagConnections || [],
-			}
 		}
 
 		const updatedClassified = await prisma.classified.update({
