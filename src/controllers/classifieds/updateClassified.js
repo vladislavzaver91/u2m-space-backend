@@ -63,38 +63,33 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Обработка тегов
+		await prisma.classifiedTag.deleteMany({
+			where: { classifiedId: id },
+		})
 		let tagConnections = []
-		if (tags !== undefined) {
-			// Проверяем, что tags определён
+		if (tags && tags.length > 0) {
 			console.log('Processing tags:', tags)
-			await prisma.classifiedTag.deleteMany({
-				where: { classifiedId: id },
-			})
 			const uniqueTags = [
 				...new Set(
 					tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
 				),
 			]
-			if (uniqueTags.length > 0) {
-				for (const tagName of uniqueTags) {
-					const tag = await prisma.tag.upsert({
-						where: { name: tagName.trim() },
-						update: {},
-						create: { name: tagName.trim() },
-					})
-					tagConnections.push({ tagId: tag.id })
-					console.log('Created/Updated tag:', tagName)
-				}
+			for (const tagName of uniqueTags) {
+				const tag = await prisma.tag.upsert({
+					where: { name: tagName.trim() },
+					update: {},
+					create: { name: tagName.trim() },
+				})
+				tagConnections.push({ tagId: tag.id })
+				console.log('Created/Updated tag:', tagName)
 			}
 		}
 
 		// Обработка изображений
 		let imageUrls = []
 		if (existingImages.length > 0) {
-			// Используем только те URL, которые переданы в existingImages
-			imageUrls = existingImages.filter(url => url.startsWith('https://')) // Фильтруем только валидные URL
-		} else {
-			imageUrls = [...classified.images] // Если existingImages пуст, используем текущие
+			// Используем порядок из existingImages
+			imageUrls = existingImages.filter(url => url.startsWith('https://'))
 		}
 		if (newImages.length > 0) {
 			const totalImages = imageUrls.length + newImages.length
@@ -148,6 +143,9 @@ const updateClassified = async (req, res) => {
 			images: imageUrls,
 			isActive:
 				isActive !== undefined ? isActive === 'true' : classified.isActive,
+			tags: {
+				create: tagConnections,
+			},
 		}
 
 		if (tagConnections.length > 0) {

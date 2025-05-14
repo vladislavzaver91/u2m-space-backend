@@ -29,22 +29,27 @@ const upload = multer({
 
 // Публичные маршруты
 router.get('/api/classifieds', getAllClassifieds)
-router.get('/api/classifieds/user', authMiddleware, getUserClassifieds)
+// router.get('/api/classifieds/user', authMiddleware, getUserClassifieds)
+router.get('/api/classifieds/user', getUserClassifieds)
 router.get('/api/classifieds/:id', getClassifiedById)
 
 // Защищенные маршруты (требуют авторизации)
 router.post(
 	'/api/classifieds',
-	authMiddleware,
+	// authMiddleware,
 	upload.array('images', 8),
 	createClassified
 )
 router.put(
 	'/api/classifieds/:id',
-	authMiddleware,
+	// authMiddleware,
 	upload.array('images', 8),
 	updateClassified
 )
-router.delete('/api/classifieds/:id', authMiddleware, deleteClassified)
+router.delete(
+	'/api/classifieds/:id',
+	// authMiddleware,
+	deleteClassified
+)
 
 module.exports = router
