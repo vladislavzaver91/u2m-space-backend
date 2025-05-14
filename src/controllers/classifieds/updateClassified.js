@@ -28,6 +28,7 @@ const updateClassified = async (req, res) => {
 
 	console.log('Request Body:', req.body)
 	console.log('Request Files:', req.files)
+	console.log('All keys in req.body:', Object.keys(req.body))
 
 	try {
 		const classified = await prisma.classified.findUnique({
