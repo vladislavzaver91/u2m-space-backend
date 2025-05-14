@@ -62,38 +62,14 @@ const updateClassified = async (req, res) => {
 				.json({ error: 'isActive must be a string ("true" or "false")' })
 		}
 
-		// Обработка тегов
-		let tagConnections = []
-		if (tags !== undefined) {
-			await prisma.classifiedTag.deleteMany({
-				where: { classifiedId: id },
-			})
-
-			if (tags && tags.length > 0) {
-				console.log('Processing tags:', tags)
-				const uniqueTags = [
-					...new Set(
-						tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
-					),
-				]
-				for (const tagName of uniqueTags) {
-					const tag = await prisma.tag.upsert({
-						where: { name: tagName.trim() },
-						update: {},
-						create: { name: tagName.trim() },
-					})
-					tagConnections.push({ tagId: tag.id })
-					console.log('Created/Updated tag:', tagName)
-				}
-			}
-		}
-
 		// Обработка изображений
-		let imageUrls = classified.images // Используем существующие изображения из базы
-		if (existingImages !== undefined) {
-			// Если переданы existingImages, используем их порядок
+		let imageUrls = []
+		if (existingImages && existingImages.length > 0) {
 			imageUrls = existingImages.filter(url => url.startsWith('https://'))
+		} else {
+			imageUrls = classified.images // Используем старые изображения, если existingImages не переданы
 		}
+
 		if (newImages.length > 0) {
 			const totalImages = imageUrls.length + newImages.length
 			if (totalImages > 8) {
@@ -138,6 +114,32 @@ const updateClassified = async (req, res) => {
 				.json({ error: 'At least 1 and up to 8 images are required' })
 		}
 
+		// Обработка тегов
+		let tagConnections = []
+		if (tags !== undefined) {
+			await prisma.classifiedTag.deleteMany({
+				where: { classifiedId: id },
+			})
+
+			if (tags && tags.length > 0) {
+				console.log('Processing tags:', tags)
+				const uniqueTags = [
+					...new Set(
+						tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
+					),
+				]
+				for (const tagName of uniqueTags) {
+					const tag = await prisma.tag.upsert({
+						where: { name: tagName.trim() },
+						update: {},
+						create: { name: tagName.trim() },
+					})
+					tagConnections.push({ tagId: tag.id })
+					console.log('Created/Updated tag:', tagName)
+				}
+			}
+		}
+
 		// Обновление объявления
 		const updateData = {
 			title: title || classified.title,
@@ -148,7 +150,7 @@ const updateClassified = async (req, res) => {
 				isActive !== undefined ? isActive === 'true' : classified.isActive,
 		}
 
-		if (tags !== undefined) {
+		if (tagConnections.length > 0) {
 			updateData.tags = {
 				create: tagConnections,
 			}
