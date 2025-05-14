@@ -23,7 +23,7 @@ const updateClassified = async (req, res) => {
 		? Array.isArray(req.body['existingImages[]'])
 			? req.body['existingImages[]']
 			: [req.body['existingImages[]']]
-		: []
+		: undefined
 	const newImages = req.files || []
 
 	console.log('Request Body:', req.body)
@@ -63,32 +63,34 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Обработка тегов
-		await prisma.classifiedTag.deleteMany({
-			where: { classifiedId: id },
-		})
-		let tagConnections = []
-		if (tags && tags.length > 0) {
-			console.log('Processing tags:', tags)
-			const uniqueTags = [
-				...new Set(
-					tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
-				),
-			]
-			for (const tagName of uniqueTags) {
-				const tag = await prisma.tag.upsert({
-					where: { name: tagName.trim() },
-					update: {},
-					create: { name: tagName.trim() },
-				})
-				tagConnections.push({ tagId: tag.id })
-				console.log('Created/Updated tag:', tagName)
+		if (tags !== undefined) {
+			await prisma.classifiedTag.deleteMany({
+				where: { classifiedId: id },
+			})
+			let tagConnections = []
+			if (tags && tags.length > 0) {
+				console.log('Processing tags:', tags)
+				const uniqueTags = [
+					...new Set(
+						tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
+					),
+				]
+				for (const tagName of uniqueTags) {
+					const tag = await prisma.tag.upsert({
+						where: { name: tagName.trim() },
+						update: {},
+						create: { name: tagName.trim() },
+					})
+					tagConnections.push({ tagId: tag.id })
+					console.log('Created/Updated tag:', tagName)
+				}
 			}
 		}
 
 		// Обработка изображений
-		let imageUrls = []
-		if (existingImages.length > 0) {
-			// Используем порядок из existingImages
+		let imageUrls = classified.images // Используем существующие изображения из базы
+		if (existingImages !== undefined) {
+			// Если переданы existingImages, используем их порядок
 			imageUrls = existingImages.filter(url => url.startsWith('https://'))
 		}
 		if (newImages.length > 0) {
@@ -143,14 +145,11 @@ const updateClassified = async (req, res) => {
 			images: imageUrls,
 			isActive:
 				isActive !== undefined ? isActive === 'true' : classified.isActive,
-			tags: {
-				create: tagConnections,
-			},
 		}
 
-		if (tagConnections.length > 0) {
+		if (tags !== undefined) {
 			updateData.tags = {
-				create: tagConnections,
+				create: tagConnections || [],
 			}
 		}
 
