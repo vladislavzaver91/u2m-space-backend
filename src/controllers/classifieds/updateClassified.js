@@ -10,8 +10,8 @@ const updateClassified = async (req, res) => {
 
 	const { id } = req.params
 	const { title, description, price, tags, isActive } = req.body
-	const existingImages = req.body['existingImages[]'] || [] // Извлекаем существующие изображения
-	const newImages = req.files || [] // Новые изображения из multer
+	const existingImages = req.body['existingImages[]'] || []
+	const newImages = req.files || []
 
 	console.log('Request Body:', req.body)
 	console.log('Request Files:', req.files)
@@ -43,8 +43,10 @@ const updateClassified = async (req, res) => {
 		if (price && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
 			return res.status(400).json({ error: 'Price must be a positive number' })
 		}
-		if (isActive !== undefined && typeof isActive !== 'boolean') {
-			return res.status(400).json({ error: 'isActive must be a boolean' })
+		if (isActive !== undefined && typeof isActive !== 'string') {
+			return res
+				.status(400)
+				.json({ error: 'isActive must be a string ("true" or "false")' })
 		}
 
 		// Обработка тегов
@@ -72,16 +74,13 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Обработка изображений
-		// Начинаем с существующих изображений, переданных с фронтенда
 		let imageUrls = Array.isArray(existingImages)
 			? existingImages
 			: typeof existingImages === 'string'
 			? [existingImages]
 			: []
 
-		// Если есть новые изображения, загружаем их в Supabase и добавляем к существующим
 		if (newImages.length > 0) {
-			// Проверяем, сколько изображений будет после добавления новых
 			const totalImages = imageUrls.length + newImages.length
 			if (totalImages > 8) {
 				return res.status(400).json({ error: 'Maximum 8 images allowed' })
@@ -132,7 +131,8 @@ const updateClassified = async (req, res) => {
 			description: description || classified.description,
 			price: price ? parseFloat(price) : classified.price,
 			images: imageUrls,
-			isActive: isActive !== undefined ? isActive : classified.isActive,
+			isActive:
+				isActive !== undefined ? isActive === 'true' : classified.isActive,
 		}
 
 		if (tagConnections.length > 0) {
