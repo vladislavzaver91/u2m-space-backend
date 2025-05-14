@@ -1,5 +1,6 @@
 const prisma = require('../../lib/prisma')
 const jwt = require('jsonwebtoken')
+const crypto = require('crypto')
 
 exports.loginForDevelop = async (req, res) => {
 	const { email, password } = req.body

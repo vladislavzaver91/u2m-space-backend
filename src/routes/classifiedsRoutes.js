@@ -19,6 +19,10 @@ const {
 const {
 	getUserClassifieds,
 } = require('../controllers/classifieds/getUserClassifieds')
+const formDataMiddleware = require('../middleware/formDataMiddleware')
+const {
+	toggleClassifiedActive,
+} = require('../controllers/classifieds/toggleClassifiedActive')
 
 const router = express.Router()
 
@@ -37,13 +41,20 @@ router.post(
 	'/api/classifieds',
 	authMiddleware,
 	upload.array('images', 8),
+	formDataMiddleware,
 	createClassified
 )
 router.put(
 	'/api/classifieds/:id',
 	authMiddleware,
 	upload.array('images', 8),
+	formDataMiddleware,
 	updateClassified
+)
+router.patch(
+	'/api/classifieds/:id/toggle-active',
+	authMiddleware,
+	toggleClassifiedActive
 )
 router.delete('/api/classifieds/:id', authMiddleware, deleteClassified)
 

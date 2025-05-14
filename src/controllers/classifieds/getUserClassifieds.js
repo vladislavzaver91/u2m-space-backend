@@ -15,7 +15,7 @@ const getUserClassifieds = async (req, res) => {
 		) {
 			return res
 				.status(400)
-				.json({ error: 'Недопустимые параметры limit или offset' })
+				.json({ error: 'Invalid limit or offset parameters' })
 		}
 
 		const where = { userId }
@@ -68,7 +68,7 @@ const getUserClassifieds = async (req, res) => {
 				messages: classified.messages,
 				favorites: classified.favorites,
 				user: {
-					name: classified.user.name || 'Аноним',
+					name: classified.user.name || '',
 					avatarUrl:
 						classified.user.avatarUrl ||
 						`${process.env.CALLBACK_URL}/public/avatar.png`,
@@ -84,12 +84,12 @@ const getUserClassifieds = async (req, res) => {
 			hasMore,
 		})
 	} catch (error) {
-		console.error('Ошибка при получении объявлений пользователя:', {
+		console.error('Error retrieving user classifieds:', {
 			message: error.message,
 			stack: error.stack,
 			queryParams: req.query,
 		})
-		return res.status(500).json({ error: 'Ошибка сервера' })
+		return res.status(500).json({ error: 'Server error' })
 	}
 }
 

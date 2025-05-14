@@ -13,31 +13,9 @@ const updateClassified = async (req, res) => {
 	const description = req.body.description || undefined
 	const price = req.body.price || undefined
 
-	let tags = []
-	if (req.body['tags[]']) {
-		tags = Array.isArray(req.body['tags[]'])
-			? req.body['tags[]']
-			: [req.body['tags[]']]
-	} else if (req.body.getAll) {
-		tags = req.body.getAll('tags[]') || []
-	}
-	tags = tags.filter(tag => typeof tag === 'string' && tag.trim().length > 0)
-
-	const isActive =
-		req.body.isActive !== undefined ? req.body.isActive : undefined
-
-	let existingImages = []
-	if (req.body['existingImages[]']) {
-		existingImages = Array.isArray(req.body['existingImages[]'])
-			? req.body['existingImages[]']
-			: [req.body['existingImages[]']]
-	} else if (req.body.getAll) {
-		existingImages = req.body.getAll('existingImages[]') || []
-	}
-	existingImages = existingImages.filter(
-		url => typeof url === 'string' && url.startsWith('https://')
-	)
-
+	const tags = req.body.tags || []
+	const isActive = req.body.isActive
+	const existingImages = req.body.existingImages || []
 	const newImages = req.files || []
 
 	console.log('Request Body:', req.body)
@@ -73,10 +51,10 @@ const updateClassified = async (req, res) => {
 		if (price && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
 			return res.status(400).json({ error: 'Price must be a positive number' })
 		}
-		if (isActive !== undefined && typeof isActive !== 'string') {
+		if (isActive !== undefined && !['true', 'false'].includes(isActive)) {
 			return res
 				.status(400)
-				.json({ error: 'isActive must be a string ("true" or "false")' })
+				.json({ error: 'isActive must be "true" or "false"' })
 		}
 
 		// Обработка тегов
@@ -85,12 +63,12 @@ const updateClassified = async (req, res) => {
 				where: { classifiedId: id },
 			})
 			let tagConnections = []
-			const uniqueTags = [...new Set(tags)]
+			const uniqueTags = [...new Set(tags.map(tag => tag.trim()))]
 			for (const tagName of uniqueTags) {
 				const tag = await prisma.tag.upsert({
-					where: { name: tagName.trim() },
+					where: { name: tagName },
 					update: {},
-					create: { name: tagName.trim() },
+					create: { name: tagName },
 				})
 				tagConnections.push({ tagId: tag.id })
 				console.log('Created/Updated tag:', tagName)
@@ -108,8 +86,7 @@ const updateClassified = async (req, res) => {
 		}
 
 		// Обработка изображений
-		let imageUrls =
-			existingImages.length > 0 ? existingImages : classified.images
+		let imageUrls = existingImages.length > 0 ? [...existingImages] : []
 		if (newImages.length > 0) {
 			const totalImages = imageUrls.length + newImages.length
 			if (totalImages > 8) {
@@ -191,4 +168,20 @@ const updateClassified = async (req, res) => {
 	}
 }
 
-module.exports = { updateClassified }
+const multerErrorHandler = handler => async (req, res, next) => {
+	try {
+		await handler(req, res, next)
+	} catch (error) {
+		if (error instanceof multer.MulterError) {
+			console.error('Multer error:', error)
+			return res
+				.status(400)
+				.json({ error: 'Invalid form data: ' + error.message })
+		}
+		next(error)
+	}
+}
+
+module.exports = {
+	updateClassified: multerErrorHandler(updateClassified),
+}
