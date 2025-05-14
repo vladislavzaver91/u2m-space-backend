@@ -1,6 +1,7 @@
 const express = require('express')
 const authController = require('../controllers/auth/authorization')
 const refreshController = require('../controllers/auth/refresh')
+const loginController = require('../controllers/auth/loginForDevelop')
 
 const router = express.Router()
 
@@ -25,5 +26,8 @@ router.get('/api/auth/exchange', authController.exchangeState)
 
 // Refresh Token Route
 router.post('/api/auth/refresh', refreshController.refreshToken)
+
+// Тестовый ендпоинт для разработки
+router.post('/api/auth/login', loginController.loginForDevelop)
 
 module.exports = router
