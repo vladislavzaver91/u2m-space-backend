@@ -5,15 +5,7 @@ const { deleteTag } = require('../controllers/tags/deleteTag')
 
 const router = express.Router()
 
-router.post(
-	'/api/tags',
-	// authMiddleware,
-	createTag
-)
-router.delete(
-	'/api/tags/:id',
-	// authMiddleware,
-	deleteTag
-)
+router.post('/api/tags', authMiddleware, createTag)
+router.delete('/api/tags/:id', authMiddleware, deleteTag)
 
 module.exports = router
