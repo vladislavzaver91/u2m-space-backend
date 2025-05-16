@@ -1,8 +1,29 @@
 const prisma = require('../../lib/prisma')
+const jwt = require('jsonwebtoken')
 
 const getAllClassifieds = async (req, res) => {
 	try {
 		const { limit = 20, offset = 0, tags } = req.query
+
+		let userId = null
+		const authHeader = req.headers.authorization
+		if (authHeader && authHeader.startsWith('Bearer ')) {
+			const token = authHeader.split(' ')[1]
+			try {
+				const decoded = jwt.verify(token, process.env.JWT_SECRET)
+				const user = await prisma.user.findUnique({
+					where: { id: decoded.id },
+				})
+				if (user) {
+					userId = user.id
+				}
+			} catch (error) {
+				console.error(
+					'Error verifying token in getAllClassifieds:',
+					error.message
+				)
+			}
+		}
 
 		const parsedLimit = parseInt(limit, 10)
 		const parsedOffset = parseInt(offset, 10)
@@ -37,6 +58,7 @@ const getAllClassifieds = async (req, res) => {
 			parsedLimit,
 			parsedOffset,
 			tags,
+			userId: userId || 'No user',
 		})
 
 		const classifieds = await prisma.classified.findMany({
@@ -56,6 +78,12 @@ const getAllClassifieds = async (req, res) => {
 						tag: { select: { name: true } },
 					},
 				},
+				favoritesBy: userId
+					? {
+							where: { userId },
+							select: { id: true },
+					  }
+					: false,
 			},
 			take: parsedLimit,
 			skip: parsedOffset,
@@ -63,6 +91,14 @@ const getAllClassifieds = async (req, res) => {
 
 		const total = await prisma.classified.count({ where })
 		const hasMore = parsedOffset + classifieds.length < total
+
+		classifieds.forEach(classified => {
+			console.log(
+				`Classified ${classified.id}: favoritesBy length = ${
+					classified.favoritesBy?.length || 0
+				}, isFavorite = ${userId ? classified.favoritesBy?.length > 0 : false}`
+			)
+		})
 
 		return res.json({
 			classifieds: classifieds.map(classified => ({
@@ -76,6 +112,7 @@ const getAllClassifieds = async (req, res) => {
 				views: classified.views,
 				messages: classified.messages,
 				favorites: classified.favorites,
+				isFavorite: userId ? classified.favoritesBy.length > 0 : false,
 				user: {
 					name: classified.user.name || 'Аноним',
 					avatarUrl:
@@ -97,6 +134,7 @@ const getAllClassifieds = async (req, res) => {
 			message: error.message,
 			stack: error.stack,
 			queryParams: req.query,
+			userId: req.user?.id,
 		})
 		return res.status(500).json({ error: 'Server error' })
 	}

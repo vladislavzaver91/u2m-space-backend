@@ -2,6 +2,7 @@ const prisma = require('../../lib/prisma')
 
 const getClassifiedById = async (req, res) => {
 	const { id } = req.params
+	const userId = req.user?.id
 
 	try {
 		console.log(`Fetching classified with ID: ${id}`)
@@ -22,6 +23,12 @@ const getClassifiedById = async (req, res) => {
 						tag: { select: { name: true } },
 					},
 				},
+				favoritesBy: userId
+					? {
+							where: { userId },
+							select: { id: true },
+					  }
+					: false,
 			},
 		})
 
@@ -45,6 +52,7 @@ const getClassifiedById = async (req, res) => {
 			views: classified.views,
 			messages: classified.messages,
 			favorites: classified.favorites,
+			isFavorite: userId ? classified.favoritesBy.length > 0 : false,
 			user: {
 				name: classified.user.name || 'Аноним',
 				avatarUrl:

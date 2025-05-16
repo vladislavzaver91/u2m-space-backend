@@ -23,6 +23,7 @@ const formDataMiddleware = require('../middleware/formDataMiddleware')
 const {
 	toggleClassifiedActive,
 } = require('../controllers/classifieds/toggleClassifiedActive')
+const { toggleFavorite } = require('../controllers/classifieds/toggleFavorite')
 
 const router = express.Router()
 
@@ -55,6 +56,11 @@ router.patch(
 	'/api/classifieds/:id/toggle-active',
 	authMiddleware,
 	toggleClassifiedActive
+)
+router.patch(
+	'/api/classifieds/:id/toggle-favorite',
+	authMiddleware,
+	toggleFavorite
 )
 router.delete('/api/classifieds/:id', authMiddleware, deleteClassified)
 
