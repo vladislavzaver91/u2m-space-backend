@@ -1,24 +1,32 @@
 const jwt = require('jsonwebtoken')
 const prisma = require('../../lib/prisma')
+const crypto = require('crypto')
 
 exports.refreshToken = async (req, res) => {
 	const { refreshToken } = req.body
 
 	if (!refreshToken) {
+		console.log('No refresh token provided in request')
 		return res.status(401).json({ message: 'Refresh token required' })
 	}
 
 	try {
+		console.log('Searching for refresh token:', refreshToken)
 		// Проверяем рефрешв бд
 		const storedToken = await prisma.refreshToken.findUnique({
 			where: { token: refreshToken },
 			include: { user: true },
 		})
 
-		if (!storedToken || storedToken.expiresAt < new Date()) {
-			return res
-				.status(401)
-				.json({ message: 'Invalid or expired refresh token' })
+		if (!storedToken) {
+			console.log('Refresh token not found in database')
+			return res.status(401).json({ message: 'Invalid refresh token' })
+		}
+
+		if (storedToken.expiresAt < new Date()) {
+			console.log('Refresh token expired:', storedToken.expiresAt)
+			await prisma.refreshToken.delete({ where: { token: refreshToken } })
+			return res.status(401).json({ message: 'Expired refresh token' })
 		}
 
 		// Генерируем новый access token
@@ -45,11 +53,17 @@ exports.refreshToken = async (req, res) => {
 			},
 		})
 
+		console.log('Refresh token updated successfully')
 		res.json({
 			accessToken,
 			refreshToken: newRefreshToken,
 		})
 	} catch (error) {
+		console.error('Error in refreshToken:', error)
+		if (error.code === 'P2025') {
+			// Ошибка "Record to update not found"
+			return res.status(401).json({ message: 'Invalid refresh token' })
+		}
 		res.status(500).json({ message: 'Server error' })
 	}
 }
