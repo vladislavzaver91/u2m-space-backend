@@ -2,7 +2,9 @@ const prisma = require('../../lib/prisma')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 
-const DEFAULT_AVATAR_URL = `${process.env.FRONTEND_URL}/public/avatar-lg.png`
+const DEFAULT_AVATAR_URL = `${
+	process.env.FRONTEND_URL || 'http://localhost:3000'
+}/public/avatar-lg.png`
 
 exports.loginForDevelop = async (req, res) => {
 	const { email, password } = req.body
