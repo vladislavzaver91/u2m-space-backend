@@ -10,7 +10,7 @@ async function seed() {
 				email: 'user@user.com',
 				name: 'Test User',
 				provider: 'test',
-				avatarUrl: 'http://localhost:3000/public/avatar.png',
+				avatarUrl: '/public/avatar-lg.png',
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			},
