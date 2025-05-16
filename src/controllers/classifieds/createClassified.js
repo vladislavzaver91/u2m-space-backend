@@ -13,6 +13,8 @@ const createClassified = async (req, res) => {
 
 	console.log('Request body:', req.body)
 	console.log('Request files:', files)
+	console.log('Tags type:', Array.isArray(tags) ? 'Array' : typeof tags)
+	console.log('Tags content:', tags)
 
 	// Валидация полей
 	if (!title || typeof title !== 'string' || title.length > 60) {

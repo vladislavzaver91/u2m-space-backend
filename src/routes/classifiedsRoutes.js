@@ -42,7 +42,6 @@ router.post(
 	'/api/classifieds',
 	authMiddleware,
 	upload.array('images', 8),
-	formDataMiddleware,
 	createClassified
 )
 router.put(
