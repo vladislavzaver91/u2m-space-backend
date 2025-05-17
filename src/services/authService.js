@@ -4,7 +4,10 @@ const FacebookStrategy = require('passport-facebook').Strategy
 const AppleStrategy = require('passport-apple').Strategy
 const prisma = require('../lib/prisma')
 
-const DEFAULT_AVATAR_URL = `${process.env.CALLBACK_URL}/public/avatar.png`
+const DEFAULT_AVATAR_URL =
+	process.env.NODE_ENV === 'development'
+		? 'http://localhost:3000/public/avatar-lg.png'
+		: 'https://u2m-space-frontend.vercel.app/public/avatar-lg.png'
 
 passport.serializeUser((user, done) => {
 	done(null, user.id)
