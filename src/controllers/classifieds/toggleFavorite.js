@@ -5,50 +5,74 @@ const toggleFavorite = async (req, res) => {
 	const userId = req.user.id
 
 	try {
+		// Проверяем существование объявления
 		const classified = await prisma.classified.findUnique({
 			where: { id },
 		})
 
-		if (!classified || !classified.isActive) {
+		if (!classified) {
 			return res.status(404).json({ error: 'Classified not found' })
 		}
 
-		const existingFavorite = await prisma.favorite.findFirst({
-			where: {
-				userId,
-				classifiedId: id,
-			},
+		// Проверяем, есть ли объявление в избранном пользователя
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { favorites: true },
 		})
 
-		if (existingFavorite) {
-			await prisma.favorite.delete({
-				where: { id: existingFavorite.id },
+		const isFavorite = user.favorites.includes(id)
+		let updatedFavorites
+
+		if (isFavorite) {
+			// Удаляем из избранного
+			updatedFavorites = await prisma.user.update({
+				where: { id: userId },
+				data: {
+					favorites: {
+						set: user.favorites.filter(favId => favId !== id),
+					},
+				},
+				select: { favorites: true },
 			})
+
+			// Декрементируем счетчик
 			await prisma.classified.update({
 				where: { id },
 				data: {
 					favorites: { decrement: 1 },
 				},
 			})
-			return res.json({
-				isFavorite: false,
-				favorites: classified.favorites - 1,
-			})
 		} else {
-			await prisma.favorite.create({
+			// Добавляем в избранное
+			updatedFavorites = await prisma.user.update({
+				where: { id: userId },
 				data: {
-					userId,
-					classifiedId: id,
+					favorites: {
+						push: id,
+					},
 				},
+				select: { favorites: true },
 			})
+
+			// Инкрементируем счетчик
 			await prisma.classified.update({
 				where: { id },
 				data: {
 					favorites: { increment: 1 },
 				},
 			})
-			return res.json({ isFavorite: true, favorites: classified.favorites + 1 })
 		}
+
+		// Получаем обновленное объявление
+		const updatedClassified = await prisma.classified.findUnique({
+			where: { id },
+		})
+
+		return res.json({
+			id,
+			favorites: updatedClassified.favorites,
+			favoritesBool: updatedFavorites.favorites.includes(id),
+		})
 	} catch (error) {
 		console.error('Error toggling favorite:', error)
 		return res.status(500).json({ error: 'Server error' })

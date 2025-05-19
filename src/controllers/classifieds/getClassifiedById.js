@@ -1,17 +1,41 @@
 const prisma = require('../../lib/prisma')
+const jwt = require('jsonwebtoken')
 
 const getClassifiedById = async (req, res) => {
 	const { id } = req.params
-	const userId = req.user?.id
+
+	let userId = null
+	let userFavorites = []
+	const authHeader = req.headers.authorization
+	if (authHeader && authHeader.startsWith('Bearer ')) {
+		const token = authHeader.split(' ')[1]
+		try {
+			const decoded = jwt.verify(token, process.env.JWT_SECRET)
+			const user = await prisma.user.findUnique({
+				where: { id: decoded.id },
+				select: { id: true, favorites: true },
+			})
+			if (user) {
+				userId = user.id
+				userFavorites = user.favorites || []
+			}
+		} catch (error) {
+			console.error(
+				'Error verifying token in getAllClassifieds:',
+				error.message
+			)
+		}
+	}
 
 	try {
-		console.log(`Fetching classified with ID: ${id}`)
+		console.log(`Fetching classified with ID: ${id}, userId: ${userId}`)
 
 		const classified = await prisma.classified.findUnique({
 			where: { id },
 			include: {
 				user: {
 					select: {
+						id: true,
 						name: true,
 						avatarUrl: true,
 						phoneNumber: true,
@@ -23,12 +47,6 @@ const getClassifiedById = async (req, res) => {
 						tag: { select: { name: true } },
 					},
 				},
-				favoritesBy: userId
-					? {
-							where: { userId },
-							select: { id: true },
-					  }
-					: false,
 			},
 		})
 
@@ -41,6 +59,14 @@ const getClassifiedById = async (req, res) => {
 			data: { views: { increment: 1 } },
 		})
 
+		const favoritesBool = userId ? userFavorites.includes(id) : false
+		console.log(
+			'favoritesBool:',
+			favoritesBool,
+			'userFavorites:',
+			userFavorites
+		)
+
 		return res.json({
 			id: classified.id,
 			title: classified.title,
@@ -52,8 +78,9 @@ const getClassifiedById = async (req, res) => {
 			views: classified.views,
 			messages: classified.messages,
 			favorites: classified.favorites,
-			isFavorite: userId ? classified.favoritesBy.length > 0 : false,
+			favoritesBool,
 			user: {
+				id: classified.user.id,
 				name: classified.user.name || 'Аноним',
 				avatarUrl:
 					classified.user.avatarUrl ||

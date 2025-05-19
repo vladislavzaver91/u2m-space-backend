@@ -17,7 +17,7 @@ model User {
   successfulDeals Int            @default(0)
   refreshTokens   RefreshToken[]
   classifieds     Classified[]   @relation("UserClassifieds")
-  favorites       Favorite[]     @relation("UserFavorites")
+  favorites       String[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
@@ -53,7 +53,6 @@ model Classified {
   userId      String
   user        User            @relation("UserClassifieds", fields: [userId], references: [id], onDelete: Cascade)
   tags        ClassifiedTag[] // Необязательное поле
-  favoritesBy Favorite[]      @relation("ClassifiedFavorites")
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 }
@@ -73,13 +72,4 @@ model ClassifiedTag {
   tag          Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([classifiedId, tagId])
-}
-
-model Favorite {
-  id           String     @id @default(uuid())
-  userId       String
-  classifiedId String
-  user         User       @relation("UserFavorites", fields: [userId], references: [id], onDelete: Cascade)
-  classified   Classified @relation("ClassifiedFavorites", fields: [classifiedId], references: [id], onDelete: Cascade)
-  createdAt    DateTime   @default(now())
 }
