@@ -41,7 +41,7 @@ const createClassified = async (req, res) => {
 			.status(400)
 			.json({ error: 'At least 1 and up to 8 images are required' })
 	}
-	if (!tags || !Array.isArray(tags)) {
+	if (tags && !Array.isArray(tags)) {
 		return res.status(400).json({ error: 'Tags must be an array' })
 	}
 
@@ -88,13 +88,15 @@ const createClassified = async (req, res) => {
 
 		// Создание или привязка тегов
 		const tagConnections = []
-		for (const tagName of tags) {
-			const tag = await prisma.tag.upsert({
-				where: { name: tagName },
-				update: {},
-				create: { name: tagName },
-			})
-			tagConnections.push({ tagId: tag.id })
+		if (tags && tags.length > 0) {
+			for (const tagName of tags) {
+				const tag = await prisma.tag.upsert({
+					where: { name: tagName },
+					update: {},
+					create: { name: tagName },
+				})
+				tagConnections.push({ tagId: tag.id })
+			}
 		}
 
 		// Создание объявления
