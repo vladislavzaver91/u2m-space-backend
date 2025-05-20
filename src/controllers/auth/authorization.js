@@ -8,9 +8,23 @@ const DEFAULT_AVATAR_URL =
 		? 'http://localhost:3000/public/avatar-lg.png'
 		: 'https://u2m-space-frontend.vercel.app/public/avatar-lg.png'
 
-exports.googleAuth = passport.authenticate('google', {
-	scope: ['profile', 'email'],
-})
+exports.googleAuth = (req, res, next) => {
+	// Очищаем сессию перед началом нового OAuth-флоу
+	req.session.destroy(
+		err => {
+			if (err) {
+				console.error('Error destroying session:', err)
+			}
+			passport.authenticate('google', {
+				scope: ['profile', 'email'],
+				prompt: 'select_account', // Добавляем prompt на бэкенде
+			})(req, res, next)
+		},
+		(req, res) => {
+			console.log('Google callback user:', req.user)
+		}
+	)
+}
 
 exports.googleCallback = passport.authenticate('google', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
@@ -40,6 +54,11 @@ exports.authSuccess = async (req, res) => {
 	}
 
 	try {
+		// Очищаем старые refresh-токены для пользователя
+		await prisma.refreshToken.deleteMany({
+			where: { userId: req.user.id },
+		})
+
 		const accessToken = jwt.sign(
 			{ id: req.user.id, email: req.user.email, name: req.user.name },
 			process.env.JWT_SECRET,
@@ -64,6 +83,10 @@ exports.authSuccess = async (req, res) => {
 			provider: req.user.provider,
 			avatarUrl: req.user.avatarUrl || DEFAULT_AVATAR_URL,
 		}
+
+		await prisma.authState.deleteMany({
+			where: { user: JSON.stringify(user) },
+		})
 
 		const state = crypto.randomBytes(16).toString('hex')
 		const stateExpires = new Date(Date.now() + 5 * 60 * 1000) // 5 мин
