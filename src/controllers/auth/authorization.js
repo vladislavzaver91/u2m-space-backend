@@ -29,7 +29,7 @@ exports.googleAuth = (req, res, next) => {
 				state: locale,
 			})(req, res, next)
 		},
-		(req, res, next) => {
+		(req, res) => {
 			console.log('Google callback user:', req.user)
 		}
 	)
