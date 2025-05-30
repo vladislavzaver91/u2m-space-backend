@@ -8,7 +8,7 @@ const DEFAULT_AVATAR_URL =
 		? 'http://localhost:3000/public/avatar-lg.png'
 		: 'https://u2m-space-frontend.vercel.app/public/avatar-lg.png'
 
-exports.googleAuth = (req, res, next) => {
+;(exports.googleAuth = (req, res, next) => {
 	// Получаем локаль и сохраняем его в сессии
 	const locale =
 		req.query.locale ||
@@ -16,24 +16,17 @@ exports.googleAuth = (req, res, next) => {
 		'en'
 	req.session.locale = locale
 
-	// Очищаем сессию перед началом нового OAuth-флоу
-	req.session.destroy(
-		err => {
-			if (err) {
-				console.error('Error destroying session:', err)
-			}
-			req.session = { locale }
-			passport.authenticate('google', {
-				scope: ['profile', 'email'],
-				prompt: 'select_account', // Добавляем prompt на бэкенде
-				state: locale,
-			})(req, res, next)
-		},
-		(req, res) => {
-			console.log('Google callback user:', req.user)
-		}
-	)
-}
+	const state = JSON.stringify({ locale })
+
+	passport.authenticate('google', {
+		scope: ['profile', 'email'],
+		prompt: 'select_account', // Добавляем prompt на бэкенде
+		state,
+	})(req, res, next)
+}),
+	(req, res) => {
+		console.log('Google callback user:', req.user)
+	}
 
 exports.googleCallback = passport.authenticate('google', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
@@ -46,11 +39,8 @@ exports.facebookAuth = (req, res, next) => {
 		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
 		'en'
 	req.session.locale = locale
-	passport.authenticate('facebook', { scope: ['email'], state: locale })(
-		req,
-		res,
-		next
-	)
+	const state = JSON.stringify({ locale })
+	passport.authenticate('facebook', { scope: ['email'], state })(req, res, next)
 }
 
 exports.facebookCallback = passport.authenticate('facebook', {
@@ -64,7 +54,8 @@ exports.appleAuth = (req, res, next) => {
 		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
 		'en'
 	req.session.locale = locale
-	passport.authenticate('apple', { scope: ['name', 'email'], state: locale })(
+	const state = JSON.stringify({ locale })
+	passport.authenticate('apple', { scope: ['name', 'email'], state })(
 		req,
 		res,
 		next
@@ -130,7 +121,14 @@ exports.authSuccess = async (req, res) => {
 			},
 		})
 
-		const locale = req.session.locale || req.query.state || 'en'
+		let locale = 'en'
+		try {
+			const oauthState = req.query.state ? JSON.parse(req.query.state) : {}
+			locale = oauthState.locale || req.session.locale || 'en'
+		} catch (error) {
+			console.error('Error parsing OAuth state:', error)
+		}
+
 		console.log('Redirecting with locale:', locale)
 		return res.redirect(
 			`${process.env.FRONTEND_URL}/${locale}/selling-classifieds?state=${state}`
