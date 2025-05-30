@@ -9,18 +9,27 @@ const DEFAULT_AVATAR_URL =
 		: 'https://u2m-space-frontend.vercel.app/public/avatar-lg.png'
 
 exports.googleAuth = (req, res, next) => {
+	// Получаем локаль и сохраняем его в сессии
+	const locale =
+		req.query.locale ||
+		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
+		'en'
+	req.session.locale = locale
+
 	// Очищаем сессию перед началом нового OAuth-флоу
 	req.session.destroy(
 		err => {
 			if (err) {
 				console.error('Error destroying session:', err)
 			}
+			req.session = { locale }
 			passport.authenticate('google', {
 				scope: ['profile', 'email'],
 				prompt: 'select_account', // Добавляем prompt на бэкенде
+				state: locale,
 			})(req, res, next)
 		},
-		(req, res) => {
+		(req, res, next) => {
 			console.log('Google callback user:', req.user)
 		}
 	)
@@ -31,16 +40,36 @@ exports.googleCallback = passport.authenticate('google', {
 	successRedirect: '/api/auth/success',
 })
 
-exports.facebookAuth = passport.authenticate('facebook', { scope: ['email'] })
+exports.facebookAuth = (req, res, next) => {
+	const locale =
+		req.query.locale ||
+		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
+		'en'
+	req.session.locale = locale
+	passport.authenticate('facebook', { scope: ['email'], state: locale })(
+		req,
+		res,
+		next
+	)
+}
 
 exports.facebookCallback = passport.authenticate('facebook', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
 	successRedirect: '/api/auth/success',
 })
 
-exports.appleAuth = passport.authenticate('apple', {
-	scope: ['name', 'email'],
-})
+exports.appleAuth = (req, res, next) => {
+	const locale =
+		req.query.locale ||
+		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
+		'en'
+	req.session.locale = locale
+	passport.authenticate('apple', { scope: ['name', 'email'], state: locale })(
+		req,
+		res,
+		next
+	)
+}
 
 exports.appleCallback = passport.authenticate('apple', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
@@ -101,8 +130,10 @@ exports.authSuccess = async (req, res) => {
 			},
 		})
 
+		const locale = req.session.locale || req.query.state || 'en'
+		console.log('Redirecting with locale:', locale)
 		return res.redirect(
-			`${process.env.FRONTEND_URL}/selling-classifieds?state=${state}`
+			`${process.env.FRONTEND_URL}/${locale}/selling-classifieds?state=${state}`
 		)
 	} catch (error) {
 		console.error('Error in authSuccess:', error)
@@ -112,8 +143,9 @@ exports.authSuccess = async (req, res) => {
 
 exports.authFailure = (req, res) => {
 	console.error('Authentication failed')
+	const locale = req.session.locale || 'en'
 	return res.redirect(
-		`${process.env.FRONTEND_URL}/login?error=Authentication failed`
+		`${process.env.FRONTEND_URL}/${locale}/login?error=Authentication failed`
 	)
 }
 
