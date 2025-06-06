@@ -3,9 +3,14 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Currency {
+  USD
+  UAH
+  EUR
 }
 
 model User {
@@ -19,6 +24,7 @@ model User {
   refreshTokens   RefreshToken[]
   classifieds     Classified[]   @relation("UserClassifieds")
   favorites       String[]
+  currency        Currency       @default(USD)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
@@ -46,6 +52,7 @@ model Classified {
   title       String
   description String
   price       Float
+  currency    Currency        @default(USD)
   images      String[] // URLs изображений в Supabase Storage
   isActive    Boolean         @default(true)
   views       Int             @default(0)

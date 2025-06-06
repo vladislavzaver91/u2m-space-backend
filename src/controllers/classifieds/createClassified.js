@@ -8,7 +8,7 @@ const createClassified = async (req, res) => {
 		return res.status(401).json({ error: 'Unauthorized' })
 	}
 
-	const { title, description, price, tags } = req.body
+	const { title, description, price, currency, tags } = req.body
 	const files = req.files || []
 
 	console.log('Request body:', req.body)
@@ -44,8 +44,17 @@ const createClassified = async (req, res) => {
 	if (tags && !Array.isArray(tags)) {
 		return res.status(400).json({ error: 'Tags must be an array' })
 	}
+	if (currency && !['USD', 'UAH', 'EUR'].includes(currency)) {
+		return res
+			.status(400)
+			.json({ error: 'Invalid currency. Must be USD, UAH, or EUR' })
+	}
 
 	try {
+		// Получаем валюту пользователя, если не указана в запросе
+		const user = await prisma.user.findUnique({ where: { id: req.user.id } })
+		const finalCurrency = currency || user.currency || 'USD'
+
 		// Обработка и загрузка изображений
 		const imageUrls = []
 		for (const file of files) {
@@ -105,6 +114,7 @@ const createClassified = async (req, res) => {
 				title,
 				description,
 				price: parseFloat(price),
+				currency: finalCurrency,
 				images: imageUrls,
 				userId: req.user.id,
 				isActive: true,

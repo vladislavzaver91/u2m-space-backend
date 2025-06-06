@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma')
+const { getExchangeRate } = require('../../services/exchangeRateService')
 const jwt = require('jsonwebtoken')
 
 const getAllClassifieds = async (req, res) => {
@@ -7,6 +8,8 @@ const getAllClassifieds = async (req, res) => {
 
 		let userId = null
 		let userFavorites = []
+		let userCurrency = 'USD'
+
 		const authHeader = req.headers.authorization
 		if (authHeader && authHeader.startsWith('Bearer ')) {
 			const token = authHeader.split(' ')[1]
@@ -14,11 +17,12 @@ const getAllClassifieds = async (req, res) => {
 				const decoded = jwt.verify(token, process.env.JWT_SECRET)
 				const user = await prisma.user.findUnique({
 					where: { id: decoded.id },
-					select: { id: true, favorites: true },
+					select: { id: true, favorites: true, currency: true },
 				})
 				if (user) {
 					userId = user.id
 					userFavorites = user.favorites || []
+					userCurrency = user.currency
 				}
 			} catch (error) {
 				console.error(
@@ -86,15 +90,25 @@ const getAllClassifieds = async (req, res) => {
 			skip: parsedOffset,
 		})
 
-		const total = await prisma.classified.count({ where })
-		const hasMore = parsedOffset + classifieds.length < total
+		const rates = await getExchangeRate('USD')
 
-		return res.json({
-			classifieds: classifieds.map(classified => ({
+		// Конвертируем цены
+		const convertedClassifieds = classifieds.map(classified => {
+			let convertedPrice = classified.price
+			if (classified.currency !== userCurrency) {
+				convertedPrice =
+					(classified.price * rates[userCurrency]) / rates[classified.currency]
+				convertedPrice = Math.round(convertedPrice * 100) / 100 // Округление до 2 знаков
+			}
+
+			return {
 				id: classified.id,
 				title: classified.title,
 				description: classified.description,
 				price: classified.price,
+				currency: classified.currency,
+				convertedPrice,
+				convertedCurrency: userCurrency,
 				images: classified.images,
 				isActive: classified.isActive,
 				createdAt: classified.createdAt,
@@ -114,7 +128,14 @@ const getAllClassifieds = async (req, res) => {
 					classified.tags && Array.isArray(classified.tags)
 						? classified.tags.map(t => t.tag?.name || '')
 						: [],
-			})),
+			}
+		})
+
+		const total = await prisma.classified.count({ where })
+		const hasMore = parsedOffset + classifieds.length < total
+
+		return res.json({
+			classifieds: convertedClassifieds,
 			total,
 			hasMore,
 		})

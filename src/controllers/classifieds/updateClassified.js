@@ -12,6 +12,7 @@ const updateClassified = async (req, res) => {
 	const title = req.body.title || undefined
 	const description = req.body.description || undefined
 	const price = req.body.price || undefined
+	const currency = req.body.currency || undefined
 
 	const tags = req.body.tags || []
 	const isActive = req.body.isActive
@@ -50,6 +51,11 @@ const updateClassified = async (req, res) => {
 		}
 		if (price && (isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
 			return res.status(400).json({ error: 'Price must be a positive number' })
+		}
+		if (currency && !['USD', 'UAH', 'EUR'].includes(currency)) {
+			return res
+				.status(400)
+				.json({ error: 'Invalid currency. Must be USD, UAH, or EUR' })
 		}
 		if (isActive !== undefined && !['true', 'false'].includes(isActive)) {
 			return res
@@ -135,6 +141,7 @@ const updateClassified = async (req, res) => {
 			title: title || classified.title,
 			description: description || classified.description,
 			price: price ? parseFloat(price) : classified.price,
+			currency: currency || classified.currency,
 			images: imageUrls,
 			isActive:
 				isActive !== undefined ? isActive === 'true' : classified.isActive,

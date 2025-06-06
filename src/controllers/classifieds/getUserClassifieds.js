@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma')
+const { getExchangeRate } = require('../../services/exchangeRateService')
 
 const getUserClassifieds = async (req, res) => {
 	try {
@@ -17,6 +18,12 @@ const getUserClassifieds = async (req, res) => {
 				.status(400)
 				.json({ error: 'Invalid limit or offset parameters' })
 		}
+
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { currency: true },
+		})
+		const userCurrency = user.currency || 'USD'
 
 		const where = { userId }
 		if (tags) {
@@ -52,15 +59,24 @@ const getUserClassifieds = async (req, res) => {
 			skip: parsedOffset,
 		})
 
-		const total = await prisma.classified.count({ where })
-		const hasMore = parsedOffset + classifieds.length < total
+		const rates = await getExchangeRate('USD')
 
-		return res.json({
-			classifieds: classifieds.map(classified => ({
+		const convertedClassifieds = classifieds.map(classified => {
+			let convertedPrice = classified.price
+			if (classified.currency !== userCurrency) {
+				convertedPrice =
+					(classified.price * rates[userCurrency]) / rates[classified.currency]
+				convertedPrice = Math.round(convertedPrice * 100) / 100 // Округление до 2 знаков
+			}
+
+			return {
 				id: classified.id,
 				title: classified.title,
 				description: classified.description,
 				price: classified.price,
+				currency: classified.currency, // Оригинальная валюта
+				convertedPrice, // Конвертированная цена
+				convertedCurrency: userCurrency, // Валюта юзера
 				images: classified.images,
 				isActive: classified.isActive,
 				createdAt: classified.createdAt,
@@ -79,7 +95,14 @@ const getUserClassifieds = async (req, res) => {
 					classified.tags && Array.isArray(classified.tags)
 						? classified.tags.map(t => t.tag?.name || '')
 						: [],
-			})),
+			}
+		})
+
+		const total = await prisma.classified.count({ where })
+		const hasMore = parsedOffset + classifieds.length < total
+
+		return res.json({
+			classifieds: convertedClassifieds,
 			total,
 			hasMore,
 		})

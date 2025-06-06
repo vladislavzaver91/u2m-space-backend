@@ -1,11 +1,14 @@
 const prisma = require('../../lib/prisma')
 const jwt = require('jsonwebtoken')
+const { getExchangeRate } = require('../../services/exchangeRateService')
 
 const getClassifiedById = async (req, res) => {
 	const { id } = req.params
 
 	let userId = null
 	let userFavorites = []
+	let userCurrency = 'USD'
+
 	const authHeader = req.headers.authorization
 	if (authHeader && authHeader.startsWith('Bearer ')) {
 		const token = authHeader.split(' ')[1]
@@ -13,11 +16,12 @@ const getClassifiedById = async (req, res) => {
 			const decoded = jwt.verify(token, process.env.JWT_SECRET)
 			const user = await prisma.user.findUnique({
 				where: { id: decoded.id },
-				select: { id: true, favorites: true },
+				select: { id: true, favorites: true, currency: true },
 			})
 			if (user) {
 				userId = user.id
 				userFavorites = user.favorites || []
+				userCurrency = user.currency
 			}
 		} catch (error) {
 			console.error(
@@ -59,6 +63,15 @@ const getClassifiedById = async (req, res) => {
 			data: { views: { increment: 1 } },
 		})
 
+		const rates = await getExchangeRate('USD')
+
+		let convertedPrice = classified.price
+		if (classified.currency !== userCurrency) {
+			convertedPrice =
+				(classified.price * rates[userCurrency]) / rates[classified.currency]
+			convertedPrice = Math.round(convertedPrice * 100) / 100 // Округление до 2 знаков
+		}
+
 		const favoritesBool = userId ? userFavorites.includes(id) : false
 		console.log(
 			'favoritesBool:',
@@ -72,6 +85,9 @@ const getClassifiedById = async (req, res) => {
 			title: classified.title,
 			description: classified.description,
 			price: classified.price,
+			currency: classified.currency, // Оригинальная валюта
+			convertedPrice, // Конвертированная цена
+			convertedCurrency: userCurrency, // Валюта юзера
 			images: classified.images,
 			isActive: classified.isActive,
 			createdAt: classified.createdAt,
