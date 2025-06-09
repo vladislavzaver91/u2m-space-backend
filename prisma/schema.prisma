@@ -13,20 +13,45 @@ enum Currency {
   EUR
 }
 
+enum Language {
+  en
+  uk
+  pl
+}
+
+enum Gender {
+  Male
+  Female
+}
+
 model User {
-  id              String         @id @default(uuid())
-  email           String         @unique
-  name            String?
-  provider        String // google || facebook || apple
-  avatarUrl       String?
-  phoneNumber     String?
-  successfulDeals Int            @default(0)
-  refreshTokens   RefreshToken[]
-  classifieds     Classified[]   @relation("UserClassifieds")
-  favorites       String[]
-  currency        Currency       @default(USD)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id               String         @id @default(uuid())
+  email            String         @unique
+  name             String?
+  legalSurname     String?
+  nickname         String?        @unique
+  provider         String // google || facebook || apple
+  avatarUrl        String?
+  phoneNumber      String?
+  extraPhoneNumber String?
+  gender           Gender?
+  birthday         String?
+  trustRating      Int            @default(50) // 0-100
+  bonuses          Int            @default(0)
+  language         Language       @default(en)
+  currency         Currency       @default(USD)
+  city             String?
+  notifications    Boolean        @default(true)
+  showPhone        Boolean        @default(false)
+  advancedUser     Boolean        @default(false)
+  deleteReason     String?
+  deletedAt        DateTime?
+  successfulDeals  Int            @default(0)
+  refreshTokens    RefreshToken[]
+  classifieds      Classified[]   @relation("UserClassifieds")
+  favorites        String[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
 
 model RefreshToken {
