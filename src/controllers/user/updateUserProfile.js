@@ -136,7 +136,7 @@ const updateUserProfile = async (req, res) => {
 				.upload(filePath, avatarFile.buffer, {
 					upsert: true,
 					contentType: avatarFile.mimetype,
-					metadata: { id }, // Изменено с owner_id на id
+					metadata: { id },
 				})
 
 			if (uploadError) {
