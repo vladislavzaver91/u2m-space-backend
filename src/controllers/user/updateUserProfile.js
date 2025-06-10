@@ -22,11 +22,19 @@ const updateSchema = Joi.object({
 	language: Joi.string().valid('en', 'uk', 'pl').optional(),
 	currency: Joi.string().valid('USD', 'UAH', 'EUR').optional(),
 	city: Joi.string().max(100).optional().allow(null, ''),
-	notifications: Joi.boolean().optional(),
-	showPhone: Joi.boolean().optional(),
-	advancedUser: Joi.boolean().optional(),
+	notifications: Joi.alternatives()
+		.try(Joi.boolean(), Joi.string().valid('true', 'false'))
+		.optional(),
+	showPhone: Joi.alternatives()
+		.try(Joi.boolean(), Joi.string().valid('true', 'false'))
+		.optional(),
+	advancedUser: Joi.alternatives()
+		.try(Joi.boolean(), Joi.string().valid('true', 'false'))
+		.optional(),
 	deleteReason: Joi.string().max(500).optional().allow(null, ''),
-	removeAvatar: Joi.boolean().optional(),
+	removeAvatar: Joi.alternatives()
+		.try(Joi.boolean(), Joi.string().valid('true', 'false'))
+		.optional(),
 }).strict()
 
 const updateUserProfile = async (req, res) => {
@@ -39,17 +47,47 @@ const updateUserProfile = async (req, res) => {
 		const data = req.body
 		const avatarFile = req.file
 
+		const processedData = {
+			...data,
+			notifications:
+				data.notifications === 'true'
+					? true
+					: data.notifications === 'false'
+					? false
+					: data.notifications,
+			showPhone:
+				data.showPhone === 'true'
+					? true
+					: data.showPhone === 'false'
+					? false
+					: data.showPhone,
+			advancedUser:
+				data.advancedUser === 'true'
+					? true
+					: data.advancedUser === 'false'
+					? false
+					: data.advancedUser,
+			removeAvatar:
+				data.removeAvatar === 'true'
+					? true
+					: data.removeAvatar === 'false'
+					? false
+					: data.removeAvatar,
+		}
+
 		// Валидация
-		const { error } = updateSchema.validate(data, { abortEarly: false })
+		const { error } = updateSchema.validate(processedData, {
+			abortEarly: false,
+		})
 		if (error) {
 			return res.status(400).json({ error: error.details.map(d => d.message) })
 		}
 
 		// Проверка уникальности nickname
-		if (data.nickname) {
+		if (processedData.nickname) {
 			const existingNickname = await prisma.user.findFirst({
 				where: {
-					nickname: data.nickname,
+					nickname: processedData.nickname,
 					id: { not: id },
 					deletedAt: null,
 				},
@@ -67,46 +105,65 @@ const updateUserProfile = async (req, res) => {
 			return res.status(404).json({ error: 'User not found' })
 		}
 
-		if (!user.nickname && !data.nickname) {
+		if (!user.nickname && !processedData.nickname) {
 			return res.status(400).json({ error: 'Nickname is required' })
 		}
-		if (!user.email && !data.email) {
+		if (!user.email && !processedData.email) {
 			return res.status(400).json({ error: 'Email is required' })
 		}
-		if (!user.phoneNumber && !data.phoneNumber) {
+		if (!user.phoneNumber && !processedData.phoneNumber) {
 			return res.status(400).json({ error: 'Phone number is required' })
 		}
 
 		// Обработка аватара
 		let avatarUrl = user.avatarUrl
 		if (avatarFile) {
-			// Удаляем старый аватар
-			if (avatarUrl) {
-				const oldPath = avatarUrl.split('/').slice(-2).join('/')
-				await supabase.storage.from('user-avatars').remove([oldPath])
-			}
-
-			// Загружаем новый
 			const fileExt = avatarFile.originalname.split('.').pop()
 			const filePath = `${id}/avatar.${fileExt}`
+			if (avatarUrl) {
+				const oldPath = avatarUrl.split('/').slice(-2).join('/')
+				const { error: removeError } = await supabase.storage
+					.from('user-avatars')
+					.remove([oldPath])
+				if (removeError) {
+					console.error('Failed to remove old avatar:', removeError)
+				}
+			}
+
+			// Загружаем новый аватар
 			const { error: uploadError } = await supabase.storage
 				.from('user-avatars')
-				.upload(filePath, avatarFile.buffer, { upsert: true })
+				.upload(filePath, avatarFile.buffer, {
+					upsert: true,
+					contentType: avatarFile.mimetype,
+					metadata: { id }, // Изменено с owner_id на id
+				})
 
 			if (uploadError) {
 				console.error('Avatar upload error:', uploadError)
-				return res.status(500).json({ error: 'Failed to upload avatar' })
+				return res.status(500).json({
+					error: 'Failed to upload avatar',
+					details: uploadError.message,
+				})
 			}
 
 			const { data: publicData } = supabase.storage
 				.from('user-avatars')
 				.getPublicUrl(filePath)
 			avatarUrl = publicData.publicUrl
-		} else if (data.removeAvatar === 'true') {
-			// Удаляем аватар
+		} else if (processedData.removeAvatar === true) {
 			if (avatarUrl) {
 				const oldPath = avatarUrl.split('/').slice(-2).join('/')
-				await supabase.storage.from('user-avatars').remove([oldPath])
+				const { error: removeError } = await supabase.storage
+					.from('user-avatars')
+					.remove([oldPath])
+				if (removeError) {
+					console.error('Failed to remove avatar:', removeError)
+					return res.status(500).json({
+						error: 'Failed to remove avatar',
+						details: removeError.message,
+					})
+				}
 				avatarUrl = null
 			}
 		}
@@ -114,24 +171,35 @@ const updateUserProfile = async (req, res) => {
 		const updatedUser = await prisma.user.update({
 			where: { id, deletedAt: null },
 			data: {
-				email: data.email || undefined,
-				name: data.name === '' ? null : data.name,
-				legalSurname: data.legalSurname === '' ? null : data.legalSurname,
-				nickname: data.nickname || undefined,
-				phoneNumber: data.phoneNumber || undefined,
+				email: processedData.email || undefined,
+				name: processedData.name === '' ? null : processedData.name,
+				legalSurname:
+					processedData.legalSurname === '' ? null : processedData.legalSurname,
+				nickname: processedData.nickname || undefined,
+				phoneNumber: processedData.phoneNumber || undefined,
 				extraPhoneNumber:
-					data.extraPhoneNumber === '' ? null : data.extraPhoneNumber,
-				gender: data.gender || undefined,
-				birthday: data.birthday || undefined,
-				language: data.language || undefined,
-				currency: data.currency || undefined,
-				city: data.city === '' ? null : data.city,
+					processedData.extraPhoneNumber === ''
+						? null
+						: processedData.extraPhoneNumber,
+				gender: processedData.gender || undefined,
+				birthday: processedData.birthday || undefined,
+				language: processedData.language || undefined,
+				currency: processedData.currency || undefined,
+				city: processedData.city === '' ? null : processedData.city,
 				notifications:
-					data.notifications !== undefined ? data.notifications : undefined,
-				showPhone: data.showPhone !== undefined ? data.showPhone : undefined,
+					processedData.notifications !== undefined
+						? processedData.notifications
+						: undefined,
+				showPhone:
+					processedData.showPhone !== undefined
+						? processedData.showPhone
+						: undefined,
 				advancedUser:
-					data.advancedUser !== undefined ? data.advancedUser : undefined,
-				deleteReason: data.deleteReason === '' ? null : data.deleteReason,
+					processedData.advancedUser !== undefined
+						? processedData.advancedUser
+						: undefined,
+				deleteReason:
+					processedData.deleteReason === '' ? null : processedData.deleteReason,
 				avatarUrl,
 			},
 			select: {

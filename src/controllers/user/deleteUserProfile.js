@@ -1,5 +1,6 @@
 const prisma = require('../../lib/prisma')
 const Joi = require('joi')
+const supabase = require('../../lib/supabase')
 
 // Схема валидации
 const deleteSchema = Joi.object({
@@ -25,21 +26,16 @@ const deleteUserProfile = async (req, res) => {
 		if (!user) {
 			return res.status(404).json({ error: 'User not found' })
 		}
+		if (user.avatarUrl) {
+			const filePath = user.avatarUrl.split('/').slice(-2).join('/')
+			await supabase.storage.from('user-avatars').remove([filePath])
+		}
 
-		await prisma.$transaction([
-			prisma.user.update({
-				where: { id },
-				data: {
-					deletedAt: new Date(),
-					deleteReason: req.body.deleteReason || null,
-				},
-			}),
-			prisma.classified.updateMany({
-				where: { userId: id },
-				data: { isActive: false },
-			}),
-		])
-		return res.json({ message: 'Account deleted successfully' })
+		await prisma.user.update({
+			where: { id },
+			data: { deletedAt: new Date() },
+		})
+		res.status(204).send()
 	} catch (error) {
 		console.error('Error deleting user account:', {
 			message: error.message,
