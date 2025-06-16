@@ -26,6 +26,7 @@ enum Gender {
 
 model User {
   id               String         @id @default(uuid())
+  providerId       String?        @unique
   email            String         @unique
   name             String?
   legalSurname     String?

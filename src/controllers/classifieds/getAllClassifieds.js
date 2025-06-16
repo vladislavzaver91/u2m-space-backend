@@ -66,7 +66,7 @@ const getAllClassifieds = async (req, res) => {
 			parsedLimit,
 			parsedOffset,
 			tags,
-			userId: userId || 'No user',
+			userId,
 			userCurrency,
 		})
 

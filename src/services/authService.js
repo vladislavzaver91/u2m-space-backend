@@ -34,7 +34,12 @@ passport.use(
 		async (req, accessToken, refreshToken, profile, done) => {
 			try {
 				let user = await prisma.user.findUnique({
-					where: { email: profile.emails[0].value },
+					where: {
+						OR: [
+							{ providerId: profile.id },
+							{ email: profile.emails[0].value, provider: 'google' },
+						],
+					},
 				})
 
 				const avatarUrl =
@@ -44,7 +49,7 @@ passport.use(
 				if (!user) {
 					user = await prisma.user.create({
 						data: {
-							id: profile.id,
+							providerId: profile.id,
 							email: profile.emails[0].value,
 							name: profile.displayName || '',
 							provider: 'google',
@@ -81,7 +86,12 @@ passport.use(
 		async (accessToken, refreshToken, profile, done) => {
 			try {
 				let user = await prisma.user.findUnique({
-					where: { email: profile.emails[0].value },
+					where: {
+						OR: [
+							{ providerId: profile.id },
+							{ email: profile.emails[0].value, provider: 'google' },
+						],
+					},
 				})
 
 				const avatarUrl =
@@ -91,7 +101,7 @@ passport.use(
 				if (!user) {
 					user = await prisma.user.create({
 						data: {
-							id: profile.id,
+							providerId: profile.id,
 							email: profile.emails[0].value,
 							name: `${profile.name.givenName || ''} ${
 								profile.name.familyName || ''
