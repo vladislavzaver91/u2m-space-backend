@@ -8,7 +8,7 @@ const DEFAULT_AVATAR_URL =
 		? 'http://localhost:3000/public/avatar-lg.png'
 		: 'https://u2m-space-frontend.vercel.app/public/avatar-lg.png'
 
-;(exports.googleAuth = (req, res, next) => {
+exports.googleAuth = (req, res, next) => {
 	// Получаем локаль и сохраняем его в сессии
 	const locale =
 		req.query.locale ||
@@ -20,15 +20,17 @@ const DEFAULT_AVATAR_URL =
 
 	const state = JSON.stringify({ locale, prompt })
 
-	passport.authenticate('google', {
-		scope: ['profile', 'email'],
+	console.log('Google auth request', {
 		prompt,
 		state,
+		locale,
+	})
+
+	passport.authenticate('google', {
+		scope: ['profile', 'email'],
+		state,
 	})(req, res, next)
-}),
-	(req, res) => {
-		console.log('Google callback user:', req.user)
-	}
+}
 
 exports.googleCallback = passport.authenticate('google', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
