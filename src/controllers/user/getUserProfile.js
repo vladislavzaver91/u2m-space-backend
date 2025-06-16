@@ -11,6 +11,7 @@ const getUserProfile = async (req, res) => {
 			where: { id, deletedAt: null },
 			select: {
 				id: true,
+				favorites: true,
 				email: true,
 				name: true,
 				legalSurname: true,

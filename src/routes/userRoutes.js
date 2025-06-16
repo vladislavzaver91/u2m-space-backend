@@ -5,6 +5,9 @@ const { updateCurrency } = require('../controllers/user/updateCurrency')
 const { getUserProfile } = require('../controllers/user/getUserProfile')
 const { updateUserProfile } = require('../controllers/user/updateUserProfile')
 const { deleteUserProfile } = require('../controllers/user/deleteUserProfile')
+const {
+	updateGuestSettings,
+} = require('../controllers/user/updateGuestSettings')
 
 const router = express.Router()
 
@@ -15,6 +18,7 @@ const upload = multer({
 
 // Публичные маршруты
 router.put('/api/users/:id/currency', updateCurrency)
+router.post('/api/users/guest/settings', updateGuestSettings)
 
 // Защищенные маршруты (требуют авторизации)
 router.get('/api/users/:id', authMiddleware, getUserProfile)

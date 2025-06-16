@@ -1,6 +1,7 @@
 const prisma = require('../../lib/prisma')
 const Joi = require('joi')
 const supabase = require('../../lib/supabase')
+const jwt = require('jsonwebtoken')
 
 // Схема валидации
 const updateSchema = Joi.object({
@@ -14,10 +15,7 @@ const updateSchema = Joi.object({
 		.optional(),
 	phoneNumber: Joi.string().min(10).optional(),
 	extraPhoneNumber: Joi.string().min(10).optional().allow(null, ''),
-	gender: Joi.string()
-		.valid('Male', 'Female', 'Other')
-		.optional()
-		.allow(null, ''),
+	gender: Joi.string().valid('Male', 'Female').optional().allow(null, ''),
 	birthday: Joi.string().min(8).optional().allow(null, ''),
 	language: Joi.string().valid('en', 'uk', 'pl').optional(),
 	currency: Joi.string().valid('USD', 'UAH', 'EUR').optional(),
@@ -47,33 +45,53 @@ const updateUserProfile = async (req, res) => {
 		const data = req.body
 		const avatarFile = req.file
 
-		const processedData = {
-			...data,
-			notifications:
-				data.notifications === 'true'
-					? true
-					: data.notifications === 'false'
-					? false
-					: data.notifications,
-			showPhone:
-				data.showPhone === 'true'
-					? true
-					: data.showPhone === 'false'
-					? false
-					: data.showPhone,
-			advancedUser:
-				data.advancedUser === 'true'
-					? true
-					: data.advancedUser === 'false'
-					? false
-					: data.advancedUser,
-			removeAvatar:
-				data.removeAvatar === 'true'
-					? true
-					: data.removeAvatar === 'false'
-					? false
-					: data.removeAvatar,
+		// const processedData = {
+		// 	...data,
+		// 	notifications:
+		// 		data.notifications === 'true'
+		// 			? true
+		// 			: data.notifications === 'false'
+		// 			? false
+		// 			: data.notifications,
+		// 	showPhone:
+		// 		data.showPhone === 'true'
+		// 			? true
+		// 			: data.showPhone === 'false'
+		// 			? false
+		// 			: data.showPhone,
+		// 	advancedUser:
+		// 		data.advancedUser === 'true'
+		// 			? true
+		// 			: data.advancedUser === 'false'
+		// 			? false
+		// 			: data.advancedUser,
+		// 	removeAvatar:
+		// 		data.removeAvatar === 'true'
+		// 			? true
+		// 			: data.removeAvatar === 'false'
+		// 			? false
+		// 			: data.removeAvatar,
+		// }
+
+		const authHeader = req.headers.authorization
+		let isAuthenticated = false
+		if (authHeader && authHeader.startsWith('Bearer ')) {
+			const token = authHeader.split(' ')[1]
+			const decoded = jwt.verify(token, process.env.JWT_SECRET)
+			if (decoded.id === id) {
+				isAuthenticated = true
+			} else {
+				return res.status(403).json({ error: 'Forbidden' })
+			}
 		}
+
+		// Для неавторизованных пользователей разрешаем только language, currency, city
+		const allowedFields = isAuthenticated
+			? Object.keys(data)
+			: ['language', 'currency', 'city']
+		const processedData = Object.fromEntries(
+			Object.entries(data).filter(([key]) => allowedFields.includes(key))
+		)
 
 		// Валидация
 		const { error } = updateSchema.validate(processedData, {
@@ -81,6 +99,17 @@ const updateUserProfile = async (req, res) => {
 		})
 		if (error) {
 			return res.status(400).json({ error: error.details.map(d => d.message) })
+		}
+		if (!isAuthenticated) {
+			// Для неавторизованных пользователей возвращаем успех
+			return res.status(200).json({ message: 'Settings updated (client-side)' })
+		}
+
+		const user = await prisma.user.findUnique({
+			where: { id, deletedAt: null },
+		})
+		if (!user) {
+			return res.status(404).json({ error: 'User not found' })
 		}
 
 		// Проверка уникальности nickname
@@ -98,13 +127,6 @@ const updateUserProfile = async (req, res) => {
 		}
 
 		// Проверка обязательных полей
-		const user = await prisma.user.findUnique({
-			where: { id, deletedAt: null },
-		})
-		if (!user) {
-			return res.status(404).json({ error: 'User not found' })
-		}
-
 		if (!user.nickname && !processedData.nickname) {
 			return res.status(400).json({ error: 'Nickname is required' })
 		}
@@ -119,7 +141,11 @@ const updateUserProfile = async (req, res) => {
 		let avatarUrl = user.avatarUrl
 		if (avatarFile) {
 			const fileExt = avatarFile.originalname.split('.').pop()
-			const filePath = `${id}/avatar.${fileExt}`
+			// Генерируем уникальное имя файла с timestamp
+			const timestamp = Date.now()
+			const filePath = `${id}/avatar_${timestamp}.${fileExt}`
+
+			// Удаляем старую аватарку, если она существует
 			if (avatarUrl) {
 				const oldPath = avatarUrl.split('/').slice(-2).join('/')
 				const { error: removeError } = await supabase.storage
@@ -127,6 +153,7 @@ const updateUserProfile = async (req, res) => {
 					.remove([oldPath])
 				if (removeError) {
 					console.error('Failed to remove old avatar:', removeError)
+					// Не прерываем выполнение, так как старая аватарка может быть уже удалена
 				}
 			}
 
@@ -134,7 +161,6 @@ const updateUserProfile = async (req, res) => {
 			const { error: uploadError } = await supabase.storage
 				.from('user-avatars')
 				.upload(filePath, avatarFile.buffer, {
-					upsert: true,
 					contentType: avatarFile.mimetype,
 					metadata: { id },
 				})
@@ -168,6 +194,7 @@ const updateUserProfile = async (req, res) => {
 			}
 		}
 
+		// Обновление профиля
 		const updatedUser = await prisma.user.update({
 			where: { id, deletedAt: null },
 			data: {
@@ -187,16 +214,22 @@ const updateUserProfile = async (req, res) => {
 				currency: processedData.currency || undefined,
 				city: processedData.city === '' ? null : processedData.city,
 				notifications:
-					processedData.notifications !== undefined
-						? processedData.notifications
+					processedData.notifications === 'true'
+						? true
+						: processedData.notifications === 'false'
+						? false
 						: undefined,
 				showPhone:
-					processedData.showPhone !== undefined
-						? processedData.showPhone
+					processedData.showPhone === 'true'
+						? true
+						: processedData.showPhone === 'false'
+						? false
 						: undefined,
 				advancedUser:
-					processedData.advancedUser !== undefined
-						? processedData.advancedUser
+					processedData.advancedUser === 'true'
+						? true
+						: processedData.advancedUser === 'false'
+						? false
 						: undefined,
 				deleteReason:
 					processedData.deleteReason === '' ? null : processedData.deleteReason,

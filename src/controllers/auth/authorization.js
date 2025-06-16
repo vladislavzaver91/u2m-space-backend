@@ -16,11 +16,13 @@ const DEFAULT_AVATAR_URL =
 		'en'
 	req.session.locale = locale
 
-	const state = JSON.stringify({ locale })
+	const prompt = req.query.prompt || 'select_account'
+
+	const state = JSON.stringify({ locale, prompt })
 
 	passport.authenticate('google', {
 		scope: ['profile', 'email'],
-		prompt: 'select_account', // Добавляем prompt на бэкенде
+		prompt,
 		state,
 	})(req, res, next)
 }),

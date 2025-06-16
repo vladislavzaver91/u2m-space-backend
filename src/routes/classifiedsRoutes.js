@@ -24,6 +24,9 @@ const {
 	toggleClassifiedActive,
 } = require('../controllers/classifieds/toggleClassifiedActive')
 const { toggleFavorite } = require('../controllers/classifieds/toggleFavorite')
+const {
+	getUserFavorites,
+} = require('../controllers/classifieds/getUserFavorites')
 
 const router = express.Router()
 
@@ -35,6 +38,7 @@ const upload = multer({
 // Публичные маршруты
 router.get('/api/classifieds', getAllClassifieds)
 router.get('/api/classifieds/user', authMiddleware, getUserClassifieds)
+router.get('/api/favorites/user', authMiddleware, getUserFavorites)
 router.get('/api/classifieds/:id', getClassifiedById)
 
 // Защищенные маршруты (требуют авторизации)

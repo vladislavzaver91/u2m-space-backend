@@ -1,38 +1,10 @@
 const prisma = require('../../lib/prisma')
 const { getExchangeRate } = require('../../services/exchangeRateService')
-const jwt = require('jsonwebtoken')
 
-const getAllClassifieds = async (req, res) => {
+const getUserFavorites = async (req, res) => {
 	try {
-		const { limit = 20, offset = 0, tags, currency } = req.query
-
-		let userId = null
-		let userFavorites = []
-		let userCurrency =
-			currency && ['USD', 'UAH', 'EUR'].includes(currency) ? currency : 'USD'
-
-		const authHeader = req.headers.authorization
-		if (authHeader && authHeader.startsWith('Bearer ')) {
-			const token = authHeader.split(' ')[1]
-			try {
-				const decoded = jwt.verify(token, process.env.JWT_SECRET)
-				const user = await prisma.user.findUnique({
-					where: { id: decoded.id },
-					select: { id: true, favorites: true, currency: true },
-				})
-				if (user) {
-					userId = user.id
-					userFavorites = user.favorites || []
-					userCurrency = user.currency
-				}
-			} catch (error) {
-				console.error(
-					'Error verifying token in getAllClassifieds:',
-					error.message
-				)
-			}
-		}
-
+		const userId = req.user.id
+		const { limit = 20, offset = 0, tags } = req.query
 		const parsedLimit = parseInt(limit, 10)
 		const parsedOffset = parseInt(offset, 10)
 
@@ -42,48 +14,41 @@ const getAllClassifieds = async (req, res) => {
 			parsedLimit < 1 ||
 			parsedOffset < 0
 		) {
-			return res.status(400).json({ error: 'Invalid limit or offset' })
+			return res
+				.status(400)
+				.json({ error: 'Invalid limit or offset parameters' })
 		}
 
-		if (parsedOffset > 100000) {
-			return res.status(400).json({ error: 'Offset too large' })
-		}
-
-		const where = { isActive: true }
-		if (tags) {
-			const tagArray = Array.isArray(tags) ? tags : [tags]
-			where.tags = {
-				some: {
-					tag: {
-						name: { in: tagArray },
-					},
-				},
-			}
-		}
-
-		console.log('Executing Prisma query with params:', {
-			where,
-			parsedLimit,
-			parsedOffset,
-			tags,
-			userId: userId || 'No user',
-			userCurrency,
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: { currency: true, favorites: true },
 		})
+		const userCurrency = user.currency || 'USD'
+		const favoriteIds = user.favorites || []
 
+		// Если нет избранных объявлений, возвращаем пустой результат
+		if (favoriteIds.length === 0) {
+			return res.json({
+				classifieds: [],
+				total: 0,
+				hasMore: false,
+			})
+		}
+
+		//  Запрашиваем избранные объявления
 		const classifieds = await prisma.classified.findMany({
-			where,
-			orderBy: { createdAt: 'desc' },
+			where: {
+				id: { in: favoriteIds },
+				isActive: true,
+			},
 			include: {
 				user: {
 					select: {
+						id: true,
 						name: true,
-						nickname: true,
-						trustRating: true,
-						bonuses: true,
 						avatarUrl: true,
 						phoneNumber: true,
 						successfulDeals: true,
-						showPhone: true,
 					},
 				},
 				tags: {
@@ -92,13 +57,13 @@ const getAllClassifieds = async (req, res) => {
 					},
 				},
 			},
+			orderBy: { createdAt: 'desc' },
 			take: parsedLimit,
 			skip: parsedOffset,
 		})
 
+		// Конвертация цен
 		const rates = await getExchangeRate('USD')
-
-		// Конвертируем цены
 		const convertedClassifieds = classifieds.map(classified => {
 			let convertedPrice = classified.price
 			if (classified.currency !== userCurrency) {
@@ -121,17 +86,14 @@ const getAllClassifieds = async (req, res) => {
 				views: classified.views,
 				messages: classified.messages,
 				favorites: classified.favorites,
-				favoritesBool: userId ? userFavorites.includes(classified.id) : false,
+				favoritesBool: true, // Все объявления в избранном
 				user: {
+					id: classified.user.id,
 					name: classified.user.name || 'Аноним',
-					nickname: classified.user.nickname,
-					trustRating: classified.user.trustRating,
-					bonuses: classified.user.bonuses,
 					avatarUrl:
 						classified.user.avatarUrl ||
 						`${process.env.CALLBACK_URL}/public/avatar.png`,
 					phoneNumber: classified.user.phoneNumber,
-					showPhone: classified.user.showPhone,
 					successfulDeals: classified.user.successfulDeals,
 				},
 				tags:
@@ -141,7 +103,13 @@ const getAllClassifieds = async (req, res) => {
 			}
 		})
 
-		const total = await prisma.classified.count({ where })
+		// Подсчет общего количества избранных объявлений
+		const total = await prisma.classified.count({
+			where: {
+				id: { in: favoriteIds },
+				isActive: true,
+			},
+		})
 		const hasMore = parsedOffset + classifieds.length < total
 
 		return res.json({
@@ -150,14 +118,13 @@ const getAllClassifieds = async (req, res) => {
 			hasMore,
 		})
 	} catch (error) {
-		console.error('Error fetching classifieds:', {
+		console.error('Error retrieving user favorites:', {
 			message: error.message,
 			stack: error.stack,
 			queryParams: req.query,
-			userId: req.user?.id,
 		})
 		return res.status(500).json({ error: 'Server error' })
 	}
 }
 
-module.exports = { getAllClassifieds }
+module.exports = { getUserFavorites }

@@ -4,10 +4,12 @@ const { getExchangeRate } = require('../../services/exchangeRateService')
 
 const getClassifiedById = async (req, res) => {
 	const { id } = req.params
+	const { currency } = req.query
 
 	let userId = null
 	let userFavorites = []
-	let userCurrency = 'USD'
+	let userCurrency =
+		currency && ['USD', 'UAH', 'EUR'].includes(currency) ? currency : 'USD'
 
 	const authHeader = req.headers.authorization
 	if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -41,9 +43,13 @@ const getClassifiedById = async (req, res) => {
 					select: {
 						id: true,
 						name: true,
+						nickname: true,
+						trustRating: true,
+						bonuses: true,
 						avatarUrl: true,
 						phoneNumber: true,
 						successfulDeals: true,
+						showPhone: true,
 					},
 				},
 				tags: {
@@ -98,11 +104,15 @@ const getClassifiedById = async (req, res) => {
 			user: {
 				id: classified.user.id,
 				name: classified.user.name || 'Аноним',
+				nickname: classified.user.nickname,
+				trustRating: classified.user.trustRating,
+				bonuses: classified.user.bonuses,
 				avatarUrl:
 					classified.user.avatarUrl ||
 					`${process.env.CALLBACK_URL}/public/avatar.png`,
 				phoneNumber: classified.user.phoneNumber,
 				successfulDeals: classified.user.successfulDeals,
+				showPhone: classified.user.showPhone,
 			},
 			tags: classified.tags.map(t => t.tag.name),
 		})
