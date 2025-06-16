@@ -18,7 +18,7 @@ exports.googleAuth = (req, res, next) => {
 
 	const prompt = req.query.prompt || 'select_account'
 
-	const state = JSON.stringify({ locale, prompt })
+	const state = JSON.stringify({ locale })
 
 	console.log('Google auth request', {
 		prompt,
@@ -28,6 +28,7 @@ exports.googleAuth = (req, res, next) => {
 
 	passport.authenticate('google', {
 		scope: ['profile', 'email'],
+		prompt,
 		state,
 	})(req, res, next)
 }
