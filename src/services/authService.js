@@ -7,7 +7,7 @@ const prisma = require('../lib/prisma')
 const DEFAULT_AVATAR_URL =
 	process.env.NODE_ENV === 'development'
 		? 'http://localhost:3000/public/avatar-lg.png'
-		: 'https://u2m-space-frontend.vercel.app/public/avatar-lg.png'
+		: `${process.env.FRONTEND_URL}public/avatar-lg.png`
 
 passport.serializeUser((user, done) => {
 	done(null, user.id)

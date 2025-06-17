@@ -5,7 +5,7 @@ async function seed() {
 		const DEFAULT_AVATAR_URL =
 			process.env.NODE_ENV === 'development'
 				? 'http://localhost:3000/public/avatar-lg.png'
-				: 'https://u2m-space-frontend.vercel.app/public/avatar-lg.png'
+				: `${process.env.FRONTEND_URL}public/avatar-lg.png`
 		const user = await prisma.user.upsert({
 			where: { email: 'user@user.com' },
 			update: {},
