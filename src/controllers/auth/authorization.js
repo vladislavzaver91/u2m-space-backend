@@ -9,12 +9,11 @@ const DEFAULT_AVATAR_URL =
 		: `${process.env.FRONTEND_URL}public/avatar-lg.png`
 
 exports.googleAuth = (req, res, next) => {
-	// Получаем локаль и сохраняем его в сессии
+	// Получаем локаль из query или заголовков
 	const locale =
 		req.query.locale ||
 		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
 		'en'
-	req.session.locale = locale
 
 	const prompt = req.query.prompt || 'select_account'
 
@@ -30,12 +29,14 @@ exports.googleAuth = (req, res, next) => {
 		scope: ['profile', 'email'],
 		prompt,
 		state,
+		session: false, // Отключаем сессии
 	})(req, res, next)
 }
 
 exports.googleCallback = passport.authenticate('google', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
 	successRedirect: '/api/auth/success',
+	session: false, // Отключаем сессии
 })
 
 exports.facebookAuth = (req, res, next) => {
@@ -43,14 +44,18 @@ exports.facebookAuth = (req, res, next) => {
 		req.query.locale ||
 		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
 		'en'
-	req.session.locale = locale
 	const state = JSON.stringify({ locale })
-	passport.authenticate('facebook', { scope: ['email'], state })(req, res, next)
+	passport.authenticate('facebook', {
+		scope: ['email'],
+		state,
+		session: false, // Отключаем сессии
+	})(req, res, next)
 }
 
 exports.facebookCallback = passport.authenticate('facebook', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
 	successRedirect: '/api/auth/success',
+	session: false, // Отключаем сессии
 })
 
 exports.appleAuth = (req, res, next) => {
@@ -58,18 +63,18 @@ exports.appleAuth = (req, res, next) => {
 		req.query.locale ||
 		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
 		'en'
-	req.session.locale = locale
 	const state = JSON.stringify({ locale })
-	passport.authenticate('apple', { scope: ['name', 'email'], state })(
-		req,
-		res,
-		next
-	)
+	passport.authenticate('apple', {
+		scope: ['name', 'email'],
+		state,
+		session: false, // Отключаем сессии
+	})(req, res, next)
 }
 
 exports.appleCallback = passport.authenticate('apple', {
 	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
 	successRedirect: '/api/auth/success',
+	session: false, // Отключаем сессии
 })
 
 exports.authSuccess = async (req, res) => {
@@ -129,7 +134,7 @@ exports.authSuccess = async (req, res) => {
 		let locale = 'en'
 		try {
 			const oauthState = req.query.state ? JSON.parse(req.query.state) : {}
-			locale = oauthState.locale || req.session.locale || 'en'
+			locale = oauthState.locale || 'en'
 		} catch (error) {
 			console.error('Error parsing OAuth state:', error)
 		}
@@ -146,7 +151,10 @@ exports.authSuccess = async (req, res) => {
 
 exports.authFailure = (req, res) => {
 	console.error('Authentication failed')
-	const locale = req.session.locale || 'en'
+	const locale =
+		req.query.locale ||
+		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
+		'en'
 	return res.redirect(
 		`${process.env.FRONTEND_URL}/${locale}/login?error=Authentication failed`
 	)

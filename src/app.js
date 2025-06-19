@@ -1,6 +1,5 @@
 const express = require('express')
 const cors = require('cors')
-const session = require('express-session')
 const passport = require('./services/authService')
 const {
 	authRouter,
@@ -13,28 +12,25 @@ const path = require('path')
 
 const app = express()
 
-app.use(cors())
+// Настройка CORS для поддержки кросс-доменных запросов
+app.use(
+	cors({
+		origin: process.env.FRONTEND_URL,
+		credentials: true,
+	})
+)
 
+// Парсинг JSON и URL-encoded данных с ограничением размера
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
-app.use(
-	session({
-		secret: process.env.SESSION_SECRET || 'your-session-secret',
-		resave: false,
-		saveUninitialized: false,
-		cookie: {
-			sameSite: 'none',
-			secure: true,
-		},
-	})
-)
+// Инициализация Passport.js без сессий
 app.use(passport.initialize())
-app.use(passport.session())
 
+// Статические файлы
 app.use('/public', express.static(path.join(__dirname, 'public')))
 
-// Routes
+// Маршруты
 app.use('/', authRouter)
 app.use('/', classifiedsRouter)
 app.use('/', tagsRouter)

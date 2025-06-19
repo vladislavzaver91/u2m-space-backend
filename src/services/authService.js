@@ -9,18 +9,8 @@ const DEFAULT_AVATAR_URL =
 		? 'http://localhost:3000/public/avatar-lg.png'
 		: `${process.env.FRONTEND_URL}public/avatar-lg.png`
 
-passport.serializeUser((user, done) => {
-	done(null, user.id)
-})
-
-passport.deserializeUser(async (id, done) => {
-	try {
-		const user = await prisma.user.findUnique({ where: { id } })
-		done(null, user)
-	} catch (error) {
-		done(error, null)
-	}
-})
+// Удаляем serializeUser и deserializeUser, так как сессии не используются
+// passport.serializeUser и passport.deserializeUser не нужны, так как мы передаем данные напрямую
 
 // Google Strategy
 passport.use(
@@ -33,7 +23,7 @@ passport.use(
 		},
 		async (req, accessToken, refreshToken, profile, done) => {
 			try {
-				let user = await prisma.user.findUnique({
+				let user = await prisma.user.findFirst({
 					where: {
 						OR: [
 							{ providerId: profile.id },
@@ -41,10 +31,6 @@ passport.use(
 						],
 					},
 				})
-
-				const avatarUrl =
-					(profile.photos && profile.photos[0]?.value) || DEFAULT_AVATAR_URL
-				console.log('Google avatarUrl:', avatarUrl)
 
 				if (!user) {
 					user = await prisma.user.create({
@@ -64,6 +50,7 @@ passport.use(
 						data: { avatarUrl },
 					})
 				}
+
 				console.log('Google user:', user)
 				done(null, user)
 			} catch (error) {
@@ -85,18 +72,18 @@ passport.use(
 		},
 		async (accessToken, refreshToken, profile, done) => {
 			try {
-				let user = await prisma.user.findUnique({
+				let user = await prisma.user.findFirst({
 					where: {
 						OR: [
 							{ providerId: profile.id },
-							{ email: profile.emails[0].value, provider: 'google' },
+							{ email: profile.emails[0].value, provider: 'facebook' },
 						],
 					},
 				})
 
 				const avatarUrl =
 					(profile.photos && profile.photos[0]?.value) || DEFAULT_AVATAR_URL
-				console.log('Google avatarUrl:', avatarUrl)
+				console.log('Facebook avatarUrl:', avatarUrl)
 
 				if (!user) {
 					user = await prisma.user.create({
@@ -128,54 +115,53 @@ passport.use(
 	)
 )
 
-// Apple Strategy
+// Apple Strategy (закомментировано, как в оригинале)
 // passport.use(
-// 	new AppleStrategy(
-// 		{
-// 			clientID: process.env.APPLE_CLIENT_ID,
-// 			teamID: process.env.APPLE_TEAM_ID,
-// 			keyID: process.env.APPLE_KEY_ID,
-// 			privateKey: process.env.APPLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-// 			callbackURL: `${process.env.CALLBACK_URL}/api/auth/callback/apple`,
-// 			scope: ['name', 'email'],
-// 		},
-// 		async (accessToken, refreshToken, profile, done) => {
-// 			try {
-// 				let user = await prisma.user.findUnique({
-// 					where: { email: profile.email },
-// 				})
+//   new AppleStrategy(
+//     {
+//       clientID: process.env.APPLE_CLIENT_ID,
+//       teamID: process.env.APPLE_TEAM_ID,
+//       keyID: process.env.APPLE_KEY_ID,
+//       privateKey: process.env.APPLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+//       callbackURL: `${process.env.CALLBACK_URL}/api/auth/callback/apple`,
+//       scope: ['name', 'email'],
+//     },
+//     async (accessToken, refreshToken, profile, done) => {
+//       try {
+//         let user = await prisma.user.findUnique({
+//           where: { email: profile.email },
+//         })
 
-// 				const avatarUrl = DEFAULT_AVATAR_URL;
+//         const avatarUrl = DEFAULT_AVATAR_URL
 
-// 				if (!user) {
-// 					user = await prisma.user.create({
-// 						data: {
-// 							id: profile.id,
-// 							email: profile.email,
-// 							name: profile.name
-// 								? `${profile.name.firstName || ''} ${profile.name.lastName || ''
-// 									}`.trim()
-// 								: '',
-// 							provider: 'apple',
-// 							avatarUrl,
-//              phoneNumber: null,
-//              successfulDeals: 0,
-// 						},
-// 					})
-// 				} else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {
-// 					user = await prisma.user.update({
-// 						where: { id: user.id },
-// 						data: { avatarUrl },
-// 					})
-// 				}
-// 				console.log('Apple user:', user)
-// 				done(null, user)
-// 			} catch (error) {
-// 				console.error('Apple auth error:', error)
-// 				done(error, null)
-// 			}
-// 		}
-// 	)
-// ) после добавления ключей, можно раскомментировать
+//         if (!user) {
+//           user = await prisma.user.create({
+//             data: {
+//               id: profile.id,
+//               email: profile.email,
+//               name: profile.name
+//                 ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim()
+//                 : '',
+//               provider: 'apple',
+//               avatarUrl,
+//               phoneNumber: null,
+//               successfulDeals: 0,
+//             },
+//           })
+//         } else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {
+//           user = await prisma.user.update({
+//             where: { id: user.id },
+//             data: { avatarUrl },
+//           })
+//         }
+//         console.log('Apple user:', user)
+//         done(null, user)
+//       } catch (error) {
+//         console.error('Apple auth error:', error)
+//         done(error, null)
+//       }
+//     }
+//   )
+// )
 
 module.exports = passport
