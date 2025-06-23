@@ -14,10 +14,7 @@ const app = express()
 
 // Настройка CORS для поддержки кросс-доменных запросов
 app.use(
-	cors({
-		origin: process.env.FRONTEND_URL,
-		credentials: true,
-	})
+	cors()
 )
 
 // Парсинг JSON и URL-encoded данных с ограничением размера

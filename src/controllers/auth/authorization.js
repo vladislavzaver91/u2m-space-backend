@@ -10,6 +10,7 @@ const DEFAULT_AVATAR_URL =
 
 exports.googleAuth = (req, res, next) => {
 	// Получаем локаль из query или заголовков
+  
 	const locale =
 		req.query.locale ||
 		req.headers['accept-language']?.split(',')[0]?.split('-')[0] ||
@@ -32,12 +33,17 @@ exports.googleAuth = (req, res, next) => {
 		session: false, // Отключаем сессии
 	})(req, res, next)
 }
-
-exports.googleCallback = passport.authenticate('google', {
-	failureRedirect: `${process.env.FRONTEND_URL}/login?error=Authentication failed`,
-	successRedirect: '/api/auth/success',
-	session: false, // Отключаем сессии
-})
+exports.googleCallback = (req, res, next) => {
+  passport.authenticate('google', { session: false }, async (err, user, info) => {
+    console.log('Google callback:', { err, user, info });
+    if (err || !user) {
+      console.error('No user or error in googleCallback:', { err, info });
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=Authentication failed`);
+    }
+    req.user = user; // Явно устанавливаем req.user
+    await exports.authSuccess(req, res);
+  })(req, res, next);
+};
 
 exports.facebookAuth = (req, res, next) => {
 	const locale =
@@ -82,6 +88,8 @@ exports.authSuccess = async (req, res) => {
 		console.error('No user found in authSuccess')
 		return res.status(401).json({ error: 'No user found' })
 	}
+  console.log('req.user:', req.user);
+
 
 	try {
 		// Очищаем старые refresh-токены для пользователя

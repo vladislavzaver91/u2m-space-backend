@@ -14,52 +14,53 @@ const DEFAULT_AVATAR_URL =
 
 // Google Strategy
 passport.use(
-	new GoogleStrategy(
-		{
-			clientID: process.env.GOOGLE_CLIENT_ID,
-			clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-			callbackURL: `${process.env.CALLBACK_URL}/api/auth/callback/google`,
-			passReqToCallback: true,
-		},
-		async (req, accessToken, refreshToken, profile, done) => {
-			try {
-				let user = await prisma.user.findFirst({
-					where: {
-						OR: [
-							{ providerId: profile.id },
-							{ email: profile.emails[0].value, provider: 'google' },
-						],
-					},
-				})
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: `${process.env.CALLBACK_URL}/api/auth/callback/google`,
+      passReqToCallback: true,
+    },
+    async (req, accessToken, refreshToken, profile, done) => {
+      try {
+        let user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { providerId: profile.id },
+              { email: profile.emails[0].value, provider: 'google' },
+            ],
+          },
+        });
+        const avatarUrl = profile.photos?.[0]?.value || 'https://default.avatar.url/image.png';
 
-				if (!user) {
-					user = await prisma.user.create({
-						data: {
-							providerId: profile.id,
-							email: profile.emails[0].value,
-							name: profile.displayName || '',
-							provider: 'google',
-							avatarUrl,
-							phoneNumber: null, // Провайдер не предоставляет телефон
-							successfulDeals: 0,
-						},
-					})
-				} else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {
-					user = await prisma.user.update({
-						where: { id: user.id },
-						data: { avatarUrl },
-					})
-				}
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              providerId: profile.id,
+              email: profile.emails[0].value,
+              name: profile.displayName || '',
+              provider: 'google',
+              avatarUrl,
+              phoneNumber: null,
+              successfulDeals: 0,
+            },
+          });
+        } else if (!user.avatarUrl || user.avatarUrl !== avatarUrl) {
+          user = await prisma.user.update({
+            where: { id: user.id },
+            data: { avatarUrl },
+          });
+        }
 
-				console.log('Google user:', user)
-				done(null, user)
-			} catch (error) {
-				console.error('Google auth error:', error)
-				done(error, null)
-			}
-		}
-	)
-)
+        console.log('Google Strategy user before done:', user);
+        done(null, user);
+      } catch (error) {
+        console.error('Google auth error:', error);
+        done(error, null);
+      }
+    }
+  )
+);
 
 // Facebook Strategy
 passport.use(
