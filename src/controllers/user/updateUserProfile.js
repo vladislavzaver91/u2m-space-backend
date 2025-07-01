@@ -2,6 +2,7 @@ const prisma = require('../../lib/prisma')
 const Joi = require('joi')
 const supabase = require('../../lib/supabase')
 const jwt = require('jsonwebtoken')
+const { createNotification } = require('../../services/notificationService')
 
 // Схема валидации
 const updateSchema = Joi.object({
@@ -194,6 +195,34 @@ const updateUserProfile = async (req, res) => {
 			}
 		}
 
+		// Создание уведомлений для изменений
+		if (
+			processedData.trustRating &&
+			processedData.trustRating !== user.trustRating
+		) {
+			await createNotification(id, 'TRUST_RATING_CHANGED', {
+				value: processedData.trustRating,
+			})
+		}
+		if (processedData.bonuses && processedData.bonuses !== super.bonuses) {
+			await createNotification(id, 'BONUSES_CHANGED', {
+				value: processedData.bonuses,
+			})
+		}
+		if (processedData.plan && processedData.plan !== user.plan) {
+			await createNotification(id, 'PLAN_CHANGED', {
+				value: processedData.plan,
+			})
+		}
+		if (
+			processedData.legalSurname &&
+			processedData.legalSurname !== user.advancedUser.legalSurname
+		) {
+			await createNotification(id, 'OFFICIAL_NAME_CONFIRMED', {
+				value: processedData.legalSurname,
+			})
+		}
+
 		// Обновление профиля
 		const updatedUser = await prisma.user.update({
 			where: { id, deletedAt: null },
@@ -234,6 +263,9 @@ const updateUserProfile = async (req, res) => {
 				deleteReason:
 					processedData.deleteReason === '' ? null : processedData.deleteReason,
 				avatarUrl,
+				trustRating: processedData.trustRating || undefined,
+				bonuses: processedData.bonuses || undefined,
+				plan: processedData.plan || undefined,
 			},
 			select: {
 				id: true,

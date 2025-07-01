@@ -27,6 +27,11 @@ const { toggleFavorite } = require('../controllers/classifieds/toggleFavorite')
 const {
 	getUserFavorites,
 } = require('../controllers/classifieds/getUserFavorites')
+const {
+	filterClassifieds,
+} = require('../controllers/classifieds/filterClassifieds')
+const { sendMessage } = require('../controllers/classifieds/sendMessage')
+const { proposeDeal } = require('../controllers/classifieds/proposeDeal')
 
 const router = express.Router()
 
@@ -40,6 +45,7 @@ router.get('/api/classifieds', getAllClassifieds)
 router.get('/api/classifieds/user', authMiddleware, getUserClassifieds)
 router.get('/api/favorites/user', authMiddleware, getUserFavorites)
 router.get('/api/classifieds/:id', getClassifiedById)
+router.get('/api/classifieds/filter', filterClassifieds)
 
 // Защищенные маршруты (требуют авторизации)
 router.post(
@@ -66,5 +72,7 @@ router.patch(
 	toggleFavorite
 )
 router.delete('/api/classifieds/:id', authMiddleware, deleteClassified)
+router.post('/api/classifieds/:id/message', authMiddleware, sendMessage)
+router.post('/api/classifieds/:id/deal', authMiddleware, proposeDeal)
 
 module.exports = router

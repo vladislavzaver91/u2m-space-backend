@@ -2,6 +2,7 @@ const prisma = require('../../lib/prisma')
 const supabase = require('../../lib/supabase')
 const sharp = require('sharp')
 const { v4: uuidv4 } = require('uuid')
+const { createNotification } = require('../../services/notificationService')
 
 const updateClassified = async (req, res) => {
 	if (!req.user) {
@@ -157,6 +158,11 @@ const updateClassified = async (req, res) => {
 					},
 				},
 			},
+		})
+
+		// Создание уведомления
+		await createNotification(req.user.id, 'CLASSIFIED_UPDATED', {
+			title: updatedClassified.title,
 		})
 
 		return res.json({

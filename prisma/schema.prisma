@@ -24,35 +24,60 @@ enum Gender {
   Female
 }
 
+enum Plan {
+  light
+  smart
+  extremum
+}
+
+enum NotificationType {
+  TRUST_RATING_CHANGED
+  BONUSES_CHANGED
+  PLAN_CHANGED
+  CLASSIFIED_ADDED
+  CLASSIFIED_UPDATED
+  CLASSIFIED_DELETED
+  CLASSIFIED_TO_FAVORITE
+  MESSAGE_RECEIVED
+  DEAL_PROPOSED
+  RULES_CHANGED
+  OFFICIAL_NAME_CONFIRMED
+}
+
 model User {
-  id               String         @id @default(uuid())
-  providerId       String?        @unique
-  email            String         @unique
-  name             String?
-  legalSurname     String?
-  nickname         String?        @unique
-  provider         String // google || facebook || apple
-  avatarUrl        String?
-  phoneNumber      String?
-  extraPhoneNumber String?
-  gender           Gender?
-  birthday         String?
-  trustRating      Int            @default(50) // 0-100
-  bonuses          Int            @default(0)
-  language         Language       @default(en)
-  currency         Currency       @default(USD)
-  city             String?
-  notifications    Boolean        @default(true)
-  showPhone        Boolean        @default(false)
-  advancedUser     Boolean        @default(false)
-  deleteReason     String?
-  deletedAt        DateTime?
-  successfulDeals  Int            @default(0)
-  refreshTokens    RefreshToken[]
-  classifieds      Classified[]   @relation("UserClassifieds")
-  favorites        String[]
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  id                String         @id @default(uuid())
+  providerId        String?        @unique
+  email             String         @unique
+  name              String?
+  legalSurname      String?
+  nickname          String?        @unique
+  provider          String // google || facebook || apple
+  avatarUrl         String?
+  phoneNumber       String?
+  extraPhoneNumber  String?
+  gender            Gender?
+  birthday          String?
+  plan              Plan           @default(light)
+  trustRating       Int            @default(50) // 0-100
+  bonuses           Int            @default(0)
+  language          Language       @default(en)
+  currency          Currency       @default(USD)
+  city              String?
+  notifications     Boolean        @default(true)
+  showPhone         Boolean        @default(false)
+  advancedUser      Boolean        @default(false)
+  deleteReason      String?
+  deletedAt         DateTime?
+  successfulDeals   Int            @default(0)
+  refreshTokens     RefreshToken[]
+  classifieds       Classified[]   @relation("UserClassifieds")
+  favorites         String[]
+  notificationsList Notification[] @relation("UserNotifications")
+  sentMessages      Message[]      @relation("SentMessages")
+  receivedMessages  Message[]      @relation("ReceivedMessages")
+  deals             Deal[]         @relation("UserDeals")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 }
 
 model RefreshToken {
@@ -74,21 +99,23 @@ model AuthState {
 }
 
 model Classified {
-  id          String          @id @default(uuid())
-  title       String
-  description String
-  price       Float
-  currency    Currency        @default(USD)
-  images      String[] // URLs изображений в Supabase Storage
-  isActive    Boolean         @default(true)
-  views       Int             @default(0)
-  messages    Int             @default(0)
-  favorites   Int             @default(0)
-  userId      String
-  user        User            @relation("UserClassifieds", fields: [userId], references: [id], onDelete: Cascade)
-  tags        ClassifiedTag[] // Необязательное поле
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id           String          @id @default(uuid())
+  title        String
+  description  String
+  price        Float
+  currency     Currency        @default(USD)
+  images       String[] // URLs изображений в Supabase Storage
+  isActive     Boolean         @default(true)
+  views        Int             @default(0)
+  messages     Int             @default(0)
+  favorites    Int             @default(0)
+  userId       String
+  user         User            @relation("UserClassifieds", fields: [userId], references: [id], onDelete: Cascade)
+  tags         ClassifiedTag[] // Необязательное поле
+  sentMessages Message[]       @relation("ClassifiedMessages")
+  deals        Deal[]          @relation("ClassifiedDeals")
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 }
 
 model Tag {
@@ -106,4 +133,38 @@ model ClassifiedTag {
   tag          Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([classifiedId, tagId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model Message {
+  id           String     @id @default(uuid())
+  senderId     String
+  receiverId   String
+  classifiedId String
+  content      String
+  sender       User       @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver     User       @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  classified   Classified @relation("ClassifiedMessages", fields: [classifiedId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+}
+
+model Deal {
+  id            String     @id @default(uuid())
+  classifiedId  String
+  proposerId    String
+  classified    Classified @relation("ClassifiedDeals", fields: [classifiedId], references: [id], onDelete: Cascade)
+  proposer      User       @relation("UserDeals", fields: [proposerId], references: [id], onDelete: Cascade)
+  status        String     @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  proposedPrice Float?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }

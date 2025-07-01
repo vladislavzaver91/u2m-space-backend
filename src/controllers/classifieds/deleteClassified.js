@@ -1,5 +1,6 @@
 const prisma = require('../../lib/prisma')
 const supabase = require('../../lib/supabase')
+const { createNotification } = require('../../services/notificationService')
 
 const deleteClassified = async (req, res) => {
 	if (!req.user) {
@@ -21,6 +22,11 @@ const deleteClassified = async (req, res) => {
 		const imagePaths = classified.images.map(url => url.split('/').pop())
 		await supabase.storage.from('classified-images').remove(imagePaths)
 
+		// Создание уведомления
+		await createNotification(req.user.id, 'CLASSIFIED_DELETED', {
+			title: classified.title,
+		})
+
 		// Удаляем объявление
 		await prisma.classified.delete({
 			where: { id },
@@ -28,7 +34,13 @@ const deleteClassified = async (req, res) => {
 
 		return res.status(204).send()
 	} catch (error) {
-		console.error('Error deleting classified:', error)
+		console.error(
+			'Error deleting classified:',
+			console.error('Error deleting classified:', {
+				message: error.message,
+				stack: error.stack,
+			})
+		)
 		return res.status(500).json({ error: 'Server error' })
 	}
 }

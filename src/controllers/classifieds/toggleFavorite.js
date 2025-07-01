@@ -1,4 +1,5 @@
 const prisma = require('../../lib/prisma')
+const { createNotification } = require('../../services/notificationService')
 
 const toggleFavorite = async (req, res) => {
 	const { id } = req.params
@@ -61,6 +62,12 @@ const toggleFavorite = async (req, res) => {
 					favorites: { increment: 1 },
 				},
 			})
+
+			if (classified.userId !== userId) {
+				await createNotification(classified.userId, 'CLASSIFIED_FAVORITED', {
+					title: classified.title,
+				})
+			}
 		}
 
 		// Получаем обновленное объявление

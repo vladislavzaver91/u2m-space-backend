@@ -8,6 +8,13 @@ const { deleteUserProfile } = require('../controllers/user/deleteUserProfile')
 const {
 	updateGuestSettings,
 } = require('../controllers/user/updateGuestSettings')
+const { updateRules } = require('../controllers/user/updateRules')
+const {
+	deleteUserNotification,
+} = require('../controllers/user/deleteUserNotifications')
+const {
+	getUserNotifications,
+} = require('../controllers/user/getUserNotifications')
 
 const router = express.Router()
 
@@ -29,5 +36,13 @@ router.post(
 	updateUserProfile
 )
 router.delete('/api/user/:id', authMiddleware, deleteUserProfile)
+
+router.post('/api/rules/update', authMiddleware, updateRules)
+router.get('/api/users/:id/notifications', authMiddleware, getUserNotifications)
+router.delete(
+	'/api/users/:id/notifications/:notificationId',
+	authMiddleware,
+	deleteUserNotification
+)
 
 module.exports = router
