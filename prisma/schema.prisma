@@ -109,6 +109,7 @@ model Classified {
   views        Int             @default(0)
   messages     Int             @default(0)
   favorites    Int             @default(0)
+  category     String?
   userId       String
   user         User            @relation("UserClassifieds", fields: [userId], references: [id], onDelete: Cascade)
   tags         ClassifiedTag[] // Необязательное поле

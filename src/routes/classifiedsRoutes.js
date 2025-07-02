@@ -32,6 +32,9 @@ const {
 } = require('../controllers/classifieds/filterClassifieds')
 const { sendMessage } = require('../controllers/classifieds/sendMessage')
 const { proposeDeal } = require('../controllers/classifieds/proposeDeal')
+const {
+	searchClassifieds,
+} = require('../controllers/classifieds/searchClassifieds')
 
 const router = express.Router()
 
@@ -45,6 +48,7 @@ router.get('/api/classifieds', getAllClassifieds)
 router.get('/api/classifieds/user', authMiddleware, getUserClassifieds)
 router.get('/api/favorites/user', authMiddleware, getUserFavorites)
 router.get('/api/classifieds/:id', getClassifiedById)
+router.post('/api/classifieds/search', searchClassifieds)
 router.get('/api/classifieds/filter', filterClassifieds)
 
 // Защищенные маршруты (требуют авторизации)
@@ -72,6 +76,7 @@ router.patch(
 	toggleFavorite
 )
 router.delete('/api/classifieds/:id', authMiddleware, deleteClassified)
+
 router.post('/api/classifieds/:id/message', authMiddleware, sendMessage)
 router.post('/api/classifieds/:id/deal', authMiddleware, proposeDeal)
 

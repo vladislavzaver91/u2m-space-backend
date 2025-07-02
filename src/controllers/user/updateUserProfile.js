@@ -204,7 +204,7 @@ const updateUserProfile = async (req, res) => {
 				value: processedData.trustRating,
 			})
 		}
-		if (processedData.bonuses && processedData.bonuses !== super.bonuses) {
+		if (processedData.bonuses && processedData.bonuses !== user.bonuses) {
 			await createNotification(id, 'BONUSES_CHANGED', {
 				value: processedData.bonuses,
 			})
