@@ -35,6 +35,9 @@ const { proposeDeal } = require('../controllers/classifieds/proposeDeal')
 const {
 	searchClassifieds,
 } = require('../controllers/classifieds/searchClassifieds')
+const {
+	promoteClassified,
+} = require('../controllers/classifieds/promoteClassified')
 
 const router = express.Router()
 
@@ -47,11 +50,12 @@ const upload = multer({
 router.get('/api/classifieds', getAllClassifieds)
 router.get('/api/classifieds/user', authMiddleware, getUserClassifieds)
 router.get('/api/favorites/user', authMiddleware, getUserFavorites)
+router.get('/api/classifieds/filter', filterClassifieds)
 router.get('/api/classifieds/:id', getClassifiedById)
 router.post('/api/classifieds/search', searchClassifieds)
-router.get('/api/classifieds/filter', filterClassifieds)
 
 // Защищенные маршруты (требуют авторизации)
+router.post('/api/classifieds/:id/promote', authMiddleware, promoteClassified)
 router.post(
 	'/api/classifieds',
 	authMiddleware,

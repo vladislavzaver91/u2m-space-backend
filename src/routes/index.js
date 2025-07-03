@@ -3,6 +3,7 @@ const classifiedsRouter = require('./classifiedsRoutes')
 const tagsRouter = require('./tagsRoutes')
 const userRouter = require('./userRoutes')
 const currencyRouter = require('./currencyRoutes')
+const planRouter = require('./planRoutes')
 
 module.exports = {
 	authRouter,
@@ -10,4 +11,5 @@ module.exports = {
 	tagsRouter,
 	userRouter,
 	currencyRouter,
+	planRouter,
 }

@@ -7,15 +7,14 @@ const {
 	tagsRouter,
 	userRouter,
 	currencyRouter,
+	planRouter,
 } = require('./routes')
 const path = require('path')
 
 const app = express()
 
 // Настройка CORS для поддержки кросс-доменных запросов
-app.use(
-	cors()
-)
+app.use(cors())
 
 // Парсинг JSON и URL-encoded данных с ограничением размера
 app.use(express.json({ limit: '50mb' }))
@@ -33,5 +32,6 @@ app.use('/', classifiedsRouter)
 app.use('/', tagsRouter)
 app.use('/', userRouter)
 app.use('/', currencyRouter)
+app.use('/', planRouter)
 
 module.exports = app

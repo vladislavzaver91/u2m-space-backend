@@ -45,39 +45,41 @@ enum NotificationType {
 }
 
 model User {
-  id                String         @id @default(uuid())
-  providerId        String?        @unique
-  email             String         @unique
+  id                String           @id @default(uuid())
+  providerId        String?          @unique
+  email             String           @unique
   name              String?
   legalSurname      String?
-  nickname          String?        @unique
+  nickname          String?          @unique
   provider          String // google || facebook || apple
   avatarUrl         String?
   phoneNumber       String?
   extraPhoneNumber  String?
   gender            Gender?
   birthday          String?
-  plan              Plan           @default(light)
-  trustRating       Int            @default(50) // 0-100
-  bonuses           Int            @default(0)
-  language          Language       @default(en)
-  currency          Currency       @default(USD)
+  plan              Plan             @default(light)
+  trustRating       Int              @default(50) // 0-100
+  bonuses           Int              @default(0)
+  language          Language         @default(en)
+  currency          Currency         @default(USD)
   city              String?
-  notifications     Boolean        @default(true)
-  showPhone         Boolean        @default(false)
-  advancedUser      Boolean        @default(false)
+  notifications     Boolean          @default(true)
+  showPhone         Boolean          @default(false)
+  advancedUser      Boolean          @default(false)
   deleteReason      String?
   deletedAt         DateTime?
-  successfulDeals   Int            @default(0)
+  successfulDeals   Int              @default(0)
   refreshTokens     RefreshToken[]
-  classifieds       Classified[]   @relation("UserClassifieds")
+  classifieds       Classified[]     @relation("UserClassifieds")
   favorites         String[]
-  notificationsList Notification[] @relation("UserNotifications")
-  sentMessages      Message[]      @relation("SentMessages")
-  receivedMessages  Message[]      @relation("ReceivedMessages")
-  deals             Deal[]         @relation("UserDeals")
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  notificationsList Notification[]   @relation("UserNotifications")
+  sentMessages      Message[]        @relation("SentMessages")
+  receivedMessages  Message[]        @relation("ReceivedMessages")
+  deals             Deal[]           @relation("UserDeals")
+  paymentHistory    PaymentHistory[]
+  promotionQueues   PromotionQueue[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 }
 
 model RefreshToken {
@@ -99,24 +101,26 @@ model AuthState {
 }
 
 model Classified {
-  id           String          @id @default(uuid())
-  title        String
-  description  String
-  price        Float
-  currency     Currency        @default(USD)
-  images       String[] // URLs изображений в Supabase Storage
-  isActive     Boolean         @default(true)
-  views        Int             @default(0)
-  messages     Int             @default(0)
-  favorites    Int             @default(0)
-  category     String?
-  userId       String
-  user         User            @relation("UserClassifieds", fields: [userId], references: [id], onDelete: Cascade)
-  tags         ClassifiedTag[] // Необязательное поле
-  sentMessages Message[]       @relation("ClassifiedMessages")
-  deals        Deal[]          @relation("ClassifiedDeals")
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id              String           @id @default(uuid())
+  title           String
+  description     String
+  price           Float
+  currency        Currency         @default(USD)
+  images          String[] // URLs изображений в Supabase Storage
+  isActive        Boolean          @default(true)
+  views           Int              @default(0)
+  messages        Int              @default(0)
+  favorites       Int              @default(0)
+  category        String?
+  userId          String
+  plan            Plan             @default(light)
+  user            User             @relation("UserClassifieds", fields: [userId], references: [id], onDelete: Cascade)
+  tags            ClassifiedTag[] // Необязательное поле
+  sentMessages    Message[]        @relation("ClassifiedMessages")
+  deals           Deal[]           @relation("ClassifiedDeals")
+  promotionQueues PromotionQueue[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Tag {
@@ -168,4 +172,27 @@ model Deal {
   proposedPrice Float?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
+}
+
+model PaymentHistory {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            Plan
+  amount          Float
+  currency        Currency @default(USD)
+  stripePaymentId String?
+  createdAt       DateTime @default(now())
+}
+
+model PromotionQueue {
+  id           String     @id @default(uuid())
+  classifiedId String
+  classified   Classified @relation(fields: [classifiedId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan         Plan
+  city         String?
+  lastPromoted DateTime   @default(now())
+  createdAt    DateTime   @default(now())
 }
