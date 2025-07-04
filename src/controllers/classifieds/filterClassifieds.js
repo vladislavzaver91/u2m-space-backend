@@ -149,6 +149,7 @@ const filterClassifieds = async (req, res) => {
 						tag: { select: { name: true } },
 					},
 				},
+				promotionQueues: true,
 			},
 			take: parsedLimit,
 			skip: parsedOffset,
@@ -168,54 +169,89 @@ const filterClassifieds = async (req, res) => {
 
 		const rates = await getExchangeRate('USD')
 
-		// Конвертация цен
-		const convertedClassifieds = classifieds.map(classified => {
-			let convertedPrice = classified.price
-			if (classified.currency !== userCurrency) {
-				convertedPrice =
-					(classified.price * rates[userCurrency]) / rates[classified.currency]
-				convertedPrice = Math.round(convertedPrice * 100) / 100
-			}
+		// Сортировка с учётом иерархии планов
+		const convertedClassifieds = classifieds
+			.map(classified => {
+				let convertedPrice = classified.price
+				if (classified.currency !== userCurrency) {
+					convertedPrice =
+						(classified.price * rates[userCurrency]) /
+						rates[classified.currency]
+					convertedPrice = Math.round(convertedPrice * 100) / 100
+				}
 
-			return {
-				id: classified.id,
-				title: classified.title,
-				description: classified.description,
-				price: classified.price,
-				currency: classified.currency,
-				convertedPrice,
-				convertedCurrency: userCurrency,
-				images: classified.images,
-				isActive: classified.isActive,
-				createdAt: classified.createdAt,
-				views: classified.views,
-				messages: classified.messages,
-				favorites: classified.favorites,
-				favoritesBool: userId ? userFavorites.includes(classified.id) : false,
-				user: {
-					name: classified.user.name || 'Аноним',
-					nickname: classified.user.nickname,
-					trustRating: classified.user.trustRating,
-					bonuses: classified.user.bonuses,
-					avatarUrl:
-						classified.user.avatarUrl ||
-						`${process.env.CALLBACK_URL}/public/avatar.png`,
-					phoneNumber: classified.user.phoneNumber,
-					showPhone: classified.user.showPhone,
-					successfulDeals: classified.user.successfulDeals,
-				},
-				tags:
-					classified.tags && Array.isArray(classified.tags)
-						? classified.tags.map(t => t.tag?.name || '')
-						: [],
-			}
-		})
+				return {
+					id: classified.id,
+					title: classified.title,
+					description: classified.description,
+					price: classified.price,
+					currency: classified.currency,
+					convertedPrice,
+					convertedCurrency: userCurrency,
+					images: classified.images,
+					isActive: classified.isActive,
+					createdAt: classified.createdAt,
+					views: classified.views,
+					messages: classified.messages,
+					favorites: classified.favorites,
+					favoritesBool: userId ? userFavorites.includes(classified.id) : false,
+					plan: classified.plan,
+					lastPromoted:
+						classified.promotionQueues[0]?.lastPromoted || classified.createdAt,
+					user: {
+						name: classified.user.name || 'Аноним',
+						nickname: classified.user.nickname,
+						trustRating: classified.user.trustRating,
+						bonuses: classified.user.bonuses,
+						avatarUrl:
+							classified.user.avatarUrl ||
+							`${process.env.CALLBACK_URL}/public/avatar.png`,
+						phoneNumber: classified.user.phoneNumber,
+						showPhone: classified.user.showPhone,
+						successfulDeals: classified.user.successfulDeals,
+					},
+					tags:
+						classified.tags && Array.isArray(classified.tags)
+							? classified.tags.map(t => t.tag?.name || '')
+							: [],
+				}
+			})
+			.sort((a, b) => {
+				// Приоритет по плану: extremum > smart > light
+				const planPriority = {
+					extremum: 3,
+					smart: 2,
+					light: 1,
+				}
+
+				const priorityA = planPriority[a.plan] || 1
+				const priorityB = planPriority[b.plan] || 1
+
+				if (priorityA !== priorityB) {
+					return priorityB - priorityA // Высший приоритет выше
+				}
+
+				// Если планы одинаковые, используем указанную сортировку
+				if (sortBy === 'price') {
+					return sortOrder === 'asc'
+						? a.convertedPrice - b.convertedPrice
+						: b.convertedPrice - a.convertedPrice
+				} else {
+					const dateA = new Date(a.createdAt).getTime()
+					const dateB = new Date(b.createdAt).getTime()
+					return sortOrder === 'asc' ? dateA - dateB : dateB - dateA
+				}
+			})
 
 		const total = await prisma.classified.count({ where })
 		const hasMore = parsedOffset + classifieds.length < total
 
 		return res.json({
-			classifieds: convertedClassifieds,
+			classifieds: {
+				largeFirst: convertedClassifieds.slice(0, 4),
+				largeSecond: convertedClassifieds.slice(4, 8),
+				small: convertedClassifieds.slice(8),
+			},
 			total,
 			hasMore,
 			priceRange: {
