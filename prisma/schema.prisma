@@ -112,6 +112,7 @@ model Classified {
   messages        Int              @default(0)
   favorites       Int              @default(0)
   category        String?
+  city            String?
   userId          String
   plan            Plan             @default(light)
   user            User             @relation("UserClassifieds", fields: [userId], references: [id], onDelete: Cascade)

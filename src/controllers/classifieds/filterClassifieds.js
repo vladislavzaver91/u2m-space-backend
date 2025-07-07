@@ -14,6 +14,7 @@ const filterClassifieds = async (req, res) => {
 			currency,
 			sortBy = 'createdAt',
 			sortOrder = 'desc',
+			city,
 		} = req.query
 
 		let userId = null
@@ -93,12 +94,27 @@ const filterClassifieds = async (req, res) => {
 			}
 		}
 
+		// Фильтрация по городу
+		if (city) {
+			where.city = { equals: city, mode: 'insensitive' }
+		}
+
 		// Получение минимальной и максимальной цены для слайдера
 		const priceRange = await prisma.classified.aggregate({
 			_min: { price: true },
 			_max: { price: true },
 			where: { isActive: true },
 		})
+
+		// Получение списка уникальных городов
+		const availableCities = await prisma.classified.findMany({
+			where: { isActive: true },
+			select: { city: true },
+			distinct: ['city'],
+		})
+		const cities = availableCities
+			.filter(item => item.city)
+			.map(item => item.city)
 
 		// Фильтрация по цене (в валюте USD, конвертация будет позже)
 		if (parsedMinPrice !== null || parsedMaxPrice !== null) {
@@ -198,6 +214,7 @@ const filterClassifieds = async (req, res) => {
 					plan: classified.plan,
 					lastPromoted:
 						classified.promotionQueues[0]?.lastPromoted || classified.createdAt,
+					city: classified.city,
 					user: {
 						name: classified.user.name || 'Аноним',
 						nickname: classified.user.nickname,
@@ -275,6 +292,7 @@ const filterClassifieds = async (req, res) => {
 				convertedCurrency: userCurrency,
 			},
 			availableTags: relatedTags.map(t => t.name),
+			availableCities: cities,
 		})
 	} catch (error) {
 		console.error('Error filtering classifieds:', {
