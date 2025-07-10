@@ -15,6 +15,9 @@ const {
 const {
 	getUserNotifications,
 } = require('../controllers/user/getUserNotifications')
+const {
+	markNotificationAsRead,
+} = require('../controllers/user/markNotificationAsRead')
 
 const router = express.Router()
 
@@ -43,6 +46,11 @@ router.delete(
 	'/api/users/:id/notifications/:notificationId',
 	authMiddleware,
 	deleteUserNotification
+)
+router.patch(
+	'/api/users/:id/notifications/:notificationId/read',
+	authMiddleware,
+	markNotificationAsRead
 )
 
 module.exports = router

@@ -142,13 +142,13 @@ model ClassifiedTag {
 }
 
 model Notification {
-  id        String           @id @default(uuid())
-  userId    String
-  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  message   String
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  messageData String // JSON-строка с данными для перевода
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
 }
 
 model Message {

@@ -10,17 +10,22 @@ const getUserNotifications = async (req, res) => {
 		const notifications = await prisma.notification.findMany({
 			where: { userId: id },
 			orderBy: { createdAt: 'desc' },
-			take: 20,
+			take: 10,
 			select: {
 				id: true,
 				type: true,
-				message: true,
+				messageData: true,
 				isRead: true,
 				createdAt: true,
 			},
 		})
 
-		return res.json({ notifications })
+		const parsedNotifications = notifications.map(notification => ({
+			...notification,
+			messageData: JSON.parse(notification.messageData || '{}'),
+		}))
+
+		return res.json(parsedNotifications)
 	} catch (error) {
 		console.error('Error retrieving notifications:', {
 			message: error.message,
