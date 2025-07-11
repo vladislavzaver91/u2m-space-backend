@@ -19,7 +19,7 @@ const getAllClassifieds = async (req, res) => {
 				const decoded = jwt.verify(token, process.env.JWT_SECRET)
 				const user = await prisma.user.findUnique({
 					where: { id: decoded.id },
-					select: { id: true, favorites: true, currency: true },
+					select: { id: true, favorites: true, currency: true, city: true },
 				})
 				if (user) {
 					userId = user.id
@@ -132,6 +132,7 @@ const getAllClassifieds = async (req, res) => {
 					favorites: classified.favorites,
 					favoritesBool: userId ? userFavorites.includes(classified.id) : false,
 					plan: classified.plan,
+					city: classified.city,
 					lastPromoted:
 						classified.promotionQueues[0]?.lastPromoted || classified.createdAt,
 					user: {

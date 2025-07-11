@@ -271,6 +271,7 @@ const updateUserProfile = async (req, res) => {
 				id: true,
 				email: true,
 				name: true,
+				plan: true,
 				legalSurname: true,
 				nickname: true,
 				avatarUrl: true,

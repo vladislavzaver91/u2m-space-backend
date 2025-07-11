@@ -13,6 +13,7 @@ const getUserProfile = async (req, res) => {
 				id: true,
 				favorites: true,
 				email: true,
+				plan: true,
 				name: true,
 				legalSurname: true,
 				nickname: true,

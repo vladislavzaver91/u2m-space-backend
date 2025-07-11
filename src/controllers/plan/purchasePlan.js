@@ -1,5 +1,6 @@
 const prisma = require('../../lib/prisma')
 const { getExchangeRate } = require('../../services/exchangeRateService')
+const { createNotification } = require('../../services/notificationService')
 // const Stripe = require('stripe')
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
@@ -15,7 +16,7 @@ const purchasePlan = async (req, res) => {
 		// Получаем пользователя
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
-			select: { currency: true, city: true },
+			select: { currency: true, city: true, language: true },
 		})
 
 		if (!user) {
@@ -107,6 +108,10 @@ const purchasePlan = async (req, res) => {
 
 		await prisma.promotionQueue.createMany({
 			data: promotionData,
+		})
+
+		await createNotification(userId, 'PLAN_CHANGED', {
+			value: plan.charAt(0).toUpperCase() + plan.slice(1),
 		})
 
 		// Получаем все активные объявления с учетом города и плана
