@@ -124,6 +124,12 @@ model Classified {
   updatedAt       DateTime         @updatedAt
 }
 
+model State {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value Int
+}
+
 model Tag {
   id          String          @id @default(uuid())
   name        String          @unique
