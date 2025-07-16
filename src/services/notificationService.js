@@ -74,7 +74,7 @@ const translations = {
 			title: 'Оголошення',
 			message: 'Ваше оголошення "{title}" видалено',
 		},
-		CLASSIFIED_FAVORITED: {
+		CLASSIFIED_TO_FAVORITE: {
 			title: 'Оголошення',
 			message: 'Користувач додав ваше оголошення "{title}" до обраного',
 		},
@@ -120,7 +120,7 @@ const translations = {
 			title: 'Ogłoszenia',
 			message: 'Twoje ogłoszenie "{title}" zostało usunięte',
 		},
-		CLASSIFIED_FAVORITED: {
+		CLASSIFIED_TO_FAVORITE: {
 			title: 'Ogłoszenia',
 			message: 'Użytkownik dodał twoje ogłoszenie "{title}" do ulubionych',
 		},
